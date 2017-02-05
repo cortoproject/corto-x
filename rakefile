@@ -1,0 +1,4 @@
+
+PACKAGE = 'corto/x'
+
+require "#{ENV['CORTO_BUILD']}/package"
