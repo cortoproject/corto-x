@@ -34,7 +34,11 @@ procedure rule: method, base=core/route::
   void destruct() method
 
 // The parser invokes the rule that matches the input
-core/router parser: returnType=object, elementSeparator=null::
-  int32 matchRoute(core/route route, stringseq pattern, any param)
+core/router parser {
+  routerDataName="node", 
+  routerDataType=object, 
+  elementSeparator=null
+} ::
+  int32 matchRoute(core/route route, stringseq pattern, any param, out:any routerData)
 
 int16 parseFile(object instance, string file)
