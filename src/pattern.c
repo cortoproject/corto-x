@@ -102,14 +102,22 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
             corto_iter it = corto_llIter(x_pattern(token)->params);
             while (corto_iterHasNext(&it)) {
                 x_pattern_parameter *p = corto_iterNext(&it);
-                sprintf(name, "%s.%s", elementName, p->name);
+                if (p->name) {
+                    sprintf(name, "%s.%s", elementName, p->name);
+                }
                 x_pattern_parameterAssign(
                     x_pattern_parameterListAppendAlloc(this->params),
-                    name,
+                    p->name ? name : NULL,
                     p->type
                 );
             }
         }
+    } else {
+        x_pattern_parameterAssign(
+            x_pattern_parameterListAppendAlloc(this->params),
+            NULL,
+            elementType
+        );
     }
 
     corto_llInsert(this->deps, token);

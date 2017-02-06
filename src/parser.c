@@ -34,6 +34,10 @@ corto_int32 _x_parser_matchRoute(
             int i;
             for (i = 1; i <= regex->re_nsub; i++) {
                 x_pattern_parameter *p = corto_llGet(rule->pattern->params, i - 1);
+                if (!p->name) {
+                    continue;
+                }
+                
                 corto_id substr;
                 char *substrPtr = substr;
                 memcpy(substr, &pattern.buffer[0][match[i].rm_so], match[i].rm_eo - match[i].rm_so);
@@ -64,7 +68,7 @@ corto_int32 _x_parser_matchRoute(
             routerData->value = result;
             
         } else if (ret != REG_NOMATCH) {
-            printf("x: error matching regex\n");
+            corto_seterr("x: error matching regex");
         }
     }
 

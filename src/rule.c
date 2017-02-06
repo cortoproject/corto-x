@@ -26,6 +26,8 @@ corto_int16 _x_rule_construct(
 
         corto_asprintf(&this->regex, "^%s$", this->pattern->regex);
 
+        corto_trace("%s: regex = %s", corto_idof(this), this->regex);
+
         /* Compile regular expression */
         regex_t *regex = corto_alloc(sizeof(regex_t));
         int ret = regcomp(regex, this->pattern->regex, REG_EXTENDED);
