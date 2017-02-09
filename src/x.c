@@ -28,12 +28,17 @@ corto_int16 _x_parseFile(
 
     corto_int32 totalLines = 0, totalMatched = 0;
 
+    corto_time start, stop;
     corto_route route = NULL;
     corto_id buffer;
     char *line;
     corto_object *obj;
     corto_int32 i;
     corto_any param = {NULL}, result = {corto_object_o, &obj};
+
+    corto_route x_parser_findRouteInBeads(void *b, corto_string str);
+
+    corto_timeGet(&start);
     while ((line = corto_fileReadLine((corto_file)f, buffer, sizeof(buffer)))) {
         if (corto_router_match(instance, line, param, result, &route)) {
             corto_lasterr(); /* Suppress uncatched error warning */
@@ -48,6 +53,7 @@ corto_int16 _x_parseFile(
         }
         totalLines ++;
     }
+    corto_timeGet(&stop);
 
     corto_trace("");
     corto_trace("x: Summary:");
@@ -57,7 +63,10 @@ corto_int16 _x_parseFile(
             routesCalled.buffer[i]);
     }
     corto_trace("");
-    corto_trace("x: parsed %d lines, matched %d", totalLines, totalMatched);
+    corto_trace("x: parsed %d lines, matched %d in %fs", 
+        totalLines, 
+        totalMatched,
+        corto_timeToDouble(corto_timeSub(stop, start)));
 
     corto_dealloc(routesCalled.buffer);
 

@@ -9,8 +9,378 @@
 #include <corto/x/x.h>
 
 /* $header() */
-#include <regex.h>   
+#include <regex.h>
+
+#define X_BEAD_GROUP_MIN (2)
+#define X_BEAD_PATTERN_MIN (5)
+
+typedef struct x_parser_beadRule x_parser_beadRule;
+struct x_parser_beadRule {
+    corto_route rule;
+    regex_t regex;
+};
+
+typedef struct x_parser_bead x_parser_bead;
+struct x_parser_bead {
+    corto_id expr;
+    int offset;
+    corto_ll beads;
+    corto_ll rules;
+    regex_t regex;
+    x_parser_bead *prev;
+};
+
+x_parser_bead *x_parser_beadNew(void) {
+    x_parser_bead  *result = corto_calloc(sizeof(x_parser_bead));
+    result->rules = corto_llNew();
+    return result;
+}
+
+x_parser_beadRule *x_parser_beadRuleNew(x_rule rule) {
+    x_parser_beadRule *result = corto_calloc(sizeof(x_parser_beadRule));
+    result->rule = corto_route(rule);
+    return result;
+}
+
+void x_parser_printBeads(x_parser_bead *bead, int indent) {
+    corto_iter it;
+    corto_trace("%*s> bead '%s'", indent * 2, "", bead->expr);
+
+    if (bead->rules) {
+        it = corto_llIter(bead->rules);
+        while (corto_iterHasNext(&it)) {
+            x_parser_beadRule *r = corto_iterNext(&it);
+            corto_trace("%*s  - rule '%s'", indent * 2, "", &r->rule->pattern[bead->offset]);
+        }
+    }
+
+    if (bead->beads) {
+        it = corto_llIter(bead->beads);
+        while (corto_iterHasNext(&it)) {
+            x_parser_bead *b = corto_iterNext(&it);
+            x_parser_printBeads(b, indent + 1);
+        }
+    }
+}
+
+corto_bool x_parser_beadMajorityInBeads(x_parser_bead *bead, char ch) {
+    if (bead->beads) {
+        corto_iter it = corto_llIter(bead->beads);
+        while (corto_iterHasNext(&it)) {
+            x_parser_bead *b = corto_iterNext(&it);
+            if (b->expr && (b->expr[0] == ch)) {
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+corto_string x_parser_regexFromExpr(x_parser this, corto_string expr) {
+    x_pattern p = corto_declare(x_pattern_o);
+    corto_string result;
+    if (!p) {
+        goto error;
+    }
+    corto_setstr(&p->expr, expr);
+    corto_setref(&p->scope, corto_parentof(this));
+    if (corto_define(p)) {
+        goto error;
+    }
+    result = corto_strdup(p->regex);
+    corto_delete(p);
+    return result;
+error:
+    return NULL;
+}
+
+corto_int16 x_parser_compileBeads(x_parser this, x_parser_bead *bead) {
+    if (strlen(bead->expr)) {
+        corto_string regex = x_parser_regexFromExpr(this, bead->expr);
+        if (!regex) {
+            goto error;
+        }
+
+        if (regcomp(&bead->regex, regex, REG_EXTENDED)) {
+            goto error;
+        }
+
+        corto_dealloc(regex);
+    }
+
+    if (bead->beads) {
+        corto_iter it = corto_llIter(bead->beads);
+        while (corto_iterHasNext(&it)) {
+            x_parser_bead *b = corto_iterNext(&it);
+            if (x_parser_compileBeads(this, b)) {
+                goto error;
+            }
+        }
+    }
+
+    if (bead->rules) {
+        corto_iter it = corto_llIter(bead->rules);
+        while (corto_iterHasNext(&it)) {
+            x_parser_beadRule *r = corto_iterNext(&it);
+            corto_string regex = x_parser_regexFromExpr(this, &r->rule->pattern[bead->offset]);
+            if (regcomp(&r->regex, regex, REG_EXTENDED)) {
+                goto error;
+            }
+            corto_dealloc(regex);
+        }
+    }
+
+    return 0;
+error:
+    return -1;
+}
+
+corto_bool x_parser_cleanEmptyBeads(x_parser_bead *bead) {
+    if (bead->beads) {
+        corto_iter it = corto_llIter(bead->beads);
+        while (corto_iterHasNext(&it)) {
+            x_parser_bead *b = corto_iterNext(&it);
+            if (x_parser_cleanEmptyBeads(b)) {
+                corto_llRemove(bead->beads, b);
+            }
+        }
+        if (!corto_llSize(bead->beads)) {
+            corto_llFree(bead->beads);
+            bead->beads = NULL;
+        }
+    }   
+    if (bead->rules) {
+        if (!corto_llSize(bead->rules)) {
+            corto_llFree(bead->rules);
+            bead->rules = NULL;
+        }
+    }
+
+    return bead->rules == NULL && bead->beads == NULL;
+}
+
+corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
+    char *ptr = str;
+    corto_iter it;
+
+    /* If bead has expression, test if string matches */
+    if (b->expr[0]) {
+        regmatch_t match;
+        if (regexec(&b->regex, str, 1, &match, 0)) {
+            return NULL;
+        }
+        ptr = &str[match.rm_eo];
+    }
+
+    /* If string matches (or if bead is root) first look in other beads */
+    if (b->beads) {
+        it = corto_llIter(b->beads);
+        while (corto_iterHasNext(&it)) {
+            x_parser_bead *bead = corto_iterNext(&it);
+            corto_route result = x_parser_findRouteInBeads(bead, ptr);
+            if (result) return result;
+        }
+    }
+
+    /* If no match is found in other beads, look in own rules */
+    if (b->rules) {
+        it = corto_llIter(b->rules);
+        while (corto_iterHasNext(&it)) {
+            x_parser_beadRule *rule = corto_iterNext(&it);
+            if (!regexec(&rule->regex, ptr, 0, NULL, 0)) {
+                return rule->rule;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+x_parser_bead* x_parser_optimize(x_parser this) {
+    corto_objectseq *methods = &corto_interface(this)->methods;
+    x_parser_bead *b_root = NULL, *b_cur = NULL;
+    corto_iter it;
+    corto_int32 i;
+    corto_bool changed = FALSE;
+
+    b_root = x_parser_beadNew();
+
+    /* Initialize root bead */
+    for (i = 0; i < methods->length; i++) {
+        if (corto_instanceof(x_rule_o, methods->buffer[i])) {
+            corto_route r = methods->buffer[i];
+            if (r->pattern) {
+                x_parser_beadRule *br = x_parser_beadRuleNew(x_rule(r));
+                corto_llAppend(b_root->rules, br);
+            }
+        }
+    }
+
+    b_cur = b_root;
+
+    int prev = 0;
+    do {
+        corto_int32 n, n_prev = 0, count = 0, max = 0;
+        char majority = 0, ch;
+
+        changed = FALSE;
+        n_prev = 0;
+        n = b_cur->offset;
+
+        corto_debug("\n==== ITER (%s, offset = %d)\n", b_cur->expr, n);
+
+        do {
+            max = 0;
+            majority = '\0';
+            it = corto_llIter(b_cur->rules);
+
+            while (corto_iterHasNext(&it)) {
+                x_parser_beadRule *r = corto_iterNext(&it);
+                if (r->rule->pattern) {
+                    if (!(ch = r->rule->pattern[n])) {
+                        break;
+                    }
+                    if (!majority || (ch != majority)) {
+                        count = 0;
+                        corto_iter it2 = corto_llIter(b_cur->rules);
+                        for (i = 0; corto_iterHasNext(&it2); i++) {
+                            x_parser_beadRule *r = corto_iterNext(&it2);
+                            if (r->rule->pattern) {
+                                if (r->rule->pattern[n] == ch) {
+                                    count++;
+                                }
+                            }
+                        }
+                        if (count >= max && !x_parser_beadMajorityInBeads(b_cur, ch)) {
+                            majority = ch;
+                            max = count;
+                        }
+                    }
+                }
+            }
+
+            /* If current majority is smaller than X_BEAD_GROUP_MIN, don't create new bead */
+            if (!ch || (max < X_BEAD_GROUP_MIN)) {
+                break;
+            }
+
+            corto_debug(">> majority = '%c', total = %d, max = %d, prev = %d, n = %d, n_prev = %d\n", 
+                majority, corto_llSize(b_cur->rules), max, prev, n, n_prev);
+
+            if ((prev != max) && (!prev || ((prev - max) >= X_BEAD_GROUP_MIN))) {
+                corto_debug(">> new bead '%s' -> '%c'\n", b_cur->expr, majority);
+                x_parser_bead *b = x_parser_beadNew();
+                b->prev = b_cur;
+                b->expr[0] = majority;
+                b->expr[1] = '\0';
+                b->offset = b_cur->offset + 1;
+                if (!b_cur->beads) {
+                    b_cur->beads = corto_llNew();
+                }
+                corto_llAppend(b_cur->beads, b);
+
+                /* Move matching rules to new bead */
+                it = corto_llIter(b_cur->rules);
+                while (corto_iterHasNext(&it)) {
+                    x_parser_beadRule *r = corto_iterNext(&it);
+                    if (r->rule->pattern && (r->rule->pattern[n] == majority)) {
+                        corto_llRemove(b_cur->rules, r);
+                        corto_llAppend(b->rules, r);
+                        corto_debug("moved from '%s'=>'%s' (%s)\n", b_cur->expr, b->expr, r->rule->pattern);
+                        changed = TRUE;
+                    }
+                }
+
+                n_prev = n;
+                b_cur = b;
+            } else {
+                corto_int32 len = strlen(b_cur->expr);
+                b_cur->expr[len] = majority;
+                b_cur->expr[len + 1] = '\0';
+                b_cur->offset ++;
+
+                if (prev != max) {
+                    it = corto_llIter(b_cur->rules);
+                    while (corto_iterHasNext(&it)) {
+                        x_parser_beadRule *r = corto_iterNext(&it);
+                        if (r->rule->pattern && (r->rule->pattern[n] != majority)) {
+                            corto_llRemove(b_cur->rules, r);
+                            corto_llAppend(b_cur->prev->rules, r);
+                            corto_debug("moved from '%s'=>'%s' (%s)\n", b_cur->expr, b_cur->prev->expr, r->rule->pattern);
+                            changed = TRUE;
+                        }
+                    }
+                }
+            }
+
+            prev = max;
+            n++;
+        } while (max >= X_BEAD_GROUP_MIN);
+
+        if (!changed) {
+            b_cur = b_cur->prev;
+            prev = 0;
+        }
+    } while (b_cur);
+
+    x_parser_cleanEmptyBeads(b_root);
+
+    x_parser_printBeads(b_root, 0);
+
+    if (x_parser_compileBeads(this, b_root)) {
+        goto error;
+    }
+
+    return b_root;
+error:
+    return NULL;
+} 
 /* $end */
+
+corto_int16 _x_parser_construct(
+    x_parser this)
+{
+/* $begin(corto/x/parser/construct) */
+    corto_int16 ret = corto_routerimpl_construct(this);
+    if (ret) {
+        goto error;
+    }
+
+    /* Build regex chain from rules to avoid evaluating substrings twice */
+    if (!(this->ruleChain = (corto_word)x_parser_optimize(this))) {
+        goto error;
+    }
+
+    return 0;
+error:
+    return -1;
+/* $end */
+}
+
+corto_route _x_parser_findRoute(
+    x_parser this,
+    corto_stringseq pattern,
+    corto_any param,
+    corto_any *routerData)
+{
+/* $begin(corto/x/parser/findRoute) */
+    return corto_routerimpl_findRoute_v(this, pattern, param, routerData);
+    
+    x_parser_bead *b = (x_parser_bead*)this->ruleChain;
+
+    corto_route result = x_parser_findRouteInBeads(b, pattern.buffer[0]);
+    if (result) {
+        /* matchRoute extracts data from the string and stores it in routerData */
+        if (x_parser_matchRoute(this, result, pattern, param, routerData)) {
+            goto error;
+        }
+    }
+    
+    return result;
+error:
+    return NULL;
+/* $end */
+}
 
 corto_int32 _x_parser_matchRoute(
     x_parser this,

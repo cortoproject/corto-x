@@ -160,6 +160,19 @@ corto_int16 _x_pattern_construct(
             corto_buffer_appendstr(&regex, "\\)");
             break;
         case '\\':
+            if (ptr[1] == '{') {
+                corto_buffer_appendstr(&regex, "\\{");
+                ptr ++;
+            } else if (ptr[1] == '}') {
+                corto_buffer_appendstr(&regex, "\\}");
+                ptr ++;
+            } else if (ptr[1] == '\\') {
+                corto_buffer_appendstr(&regex, "\\\\");
+                ptr ++;
+            } else {
+                corto_seterr("invalid escape sequence '\\%c'", ptr[1]);
+                goto error;
+            }
             break;
         case '*':
             corto_buffer_appendstr(&regex, "\\*");

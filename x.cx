@@ -26,7 +26,7 @@ class pattern: struct, hidden, attr = attr_default|attr_scoped::
   int16 construct()
   int16 init()
 
-procedure rule: method, base=core/route::
+procedure rule: method, base=core/route, options={parentState=DECLARED}::
   member pattern: x/pattern, private
   member regex: string
   member compiledRegex: word
@@ -40,5 +40,9 @@ core/router parser {
   elementSeparator=null
 } ::
   int32 matchRoute(core/route route, stringseq pattern, any param, out:any routerData)
+  core/route findRoute(stringseq pattern, any param, out:any routerData)
+  int16 construct()
+
+  member ruleChain: word
 
 int16 parseFile(object instance, string file)
