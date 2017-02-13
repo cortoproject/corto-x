@@ -87,7 +87,7 @@ corto_string x_parser_regexFromExpr(x_parser this, corto_string expr) {
     if (corto_define(p)) {
         goto error;
     }
-    result = corto_strdup(p->regex);
+    corto_asprintf(&result, "^%s", p->regex);
     corto_delete(p);
     return result;
 error:
@@ -359,13 +359,16 @@ error:
 
 corto_route _x_parser_findRoute(
     x_parser this,
+    corto_object instance,
     corto_stringseq pattern,
     corto_any param,
     corto_any *routerData)
 {
 /* $begin(corto/x/parser/findRoute) */
-    return corto_routerimpl_findRoute_v(this, pattern, param, routerData);
+    // Uncomment this line to switch to legacy lookup of routes (slow)
+    // return corto_routerimpl_findRoute_v(this, pattern, param, routerData);
     
+    // Find route in optimized parser administration
     x_parser_bead *b = (x_parser_bead*)this->ruleChain;
 
     corto_route result = x_parser_findRouteInBeads(b, pattern.buffer[0]);
@@ -373,6 +376,24 @@ corto_route _x_parser_findRoute(
         /* matchRoute extracts data from the string and stores it in routerData */
         if (x_parser_matchRoute(this, result, pattern, param, routerData)) {
             goto error;
+        }
+
+        /* If parameter is set to a visitor, call visitor and return NULL, so
+         * the router won't invoke the rule of the parser class */
+        if (param.value) {
+            corto_object visitor = param.value;
+            corto_method callback = corto_interface_resolveMethod(
+                corto_typeof(visitor), corto_idof(result));
+            
+            /* Visitor doesn't necessarily implement callbacks for all rules */
+            if (callback) {
+                void *args[3];
+                args[0] = &visitor;
+                args[1] = instance,
+                args[2] = &routerData->value;
+                corto_callb(corto_function(callback), NULL, args);
+                result = NULL;
+            }
         }
     }
     

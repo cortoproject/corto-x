@@ -10,7 +10,8 @@
 
 corto_int16 _x_parseFile(
     corto_object instance,
-    corto_string file)
+    corto_string file,
+    corto_object visitor)
 {
 /* $begin(corto/x/parseFile) */
     FILE *f = fopen(file, "r");
@@ -18,6 +19,10 @@ corto_int16 _x_parseFile(
         corto_seterr("x: could not open input file '%s': %s", file, corto_lasterr());
         goto error;
     }
+
+    fseek(f, 0L, SEEK_END);
+    size_t size = ftell(f);
+    rewind(f);
 
     corto_routerimpl parser = corto_routerimpl(corto_typeof(instance));
     corto_objectseq *methods = &corto_interface(parser)->methods;
@@ -32,11 +37,16 @@ corto_int16 _x_parseFile(
     corto_route route = NULL;
     corto_id buffer;
     char *line;
-    corto_object *obj;
-    corto_int32 i;
-    corto_any param = {NULL}, result = {corto_object_o, &obj};
+    corto_int32 bytesRead = 0;
+    corto_int32 i, lineCount = 0;
+    corto_any param = {NULL}, result = {NULL, NULL};
 
-    corto_route x_parser_findRouteInBeads(void *b, corto_string str);
+    if (visitor) {
+        param.type = corto_typeof(visitor);
+        param.value = visitor;
+    }
+
+    printf("x/parser: parsing '%s'\n", file);
 
     corto_timeGet(&start);
     while ((line = corto_fileReadLine((corto_file)f, buffer, sizeof(buffer)))) {
@@ -52,8 +62,27 @@ corto_int16 _x_parseFile(
             totalMatched ++;
         }
         totalLines ++;
+
+        bytesRead += strlen(line) + 1;
+
+        if (!(lineCount % 5432)) {
+            for (i = 0; i < 80; i++) {
+                printf("\b");
+            }
+            printf("x/parser: %.1f%% (total = %d, matched = %d)", 
+                100.0 * ((float)bytesRead / (float)size), totalLines, totalMatched);
+            fflush(stdout);
+        }
+        lineCount ++;
     }
     corto_timeGet(&stop);
+    for (i = 0; i < 80; i++) {
+        printf("\b");
+    }
+    printf("x/parser: 100%% (total = %d, matched = %d)  \n", 
+        totalLines, totalMatched);
+    printf("x/parser: done (%.1f seconds)\n",
+        corto_timeToDouble(corto_timeSub(stop, start)));
 
     corto_trace("");
     corto_trace("x: Summary:");

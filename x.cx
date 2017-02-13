@@ -26,6 +26,7 @@ class pattern: struct, hidden, attr = attr_default|attr_scoped::
   int16 construct()
   int16 init()
 
+// Rule expressions are matched with a single line from the input
 procedure rule: method, base=core/route, options={parentState=DECLARED}::
   member pattern: x/pattern, private
   member regex: string
@@ -40,9 +41,22 @@ core/router parser {
   elementSeparator=null
 } ::
   int32 matchRoute(core/route route, stringseq pattern, any param, out:any routerData)
-  core/route findRoute(stringseq pattern, any param, out:any routerData)
+  core/route findRoute(object instance, stringseq pattern, any param, out:any routerData)
   int16 construct()
 
   member ruleChain: word
 
-int16 parseFile(object instance, string file)
+// Visitor class for x/parser
+class visitor
+
+procedure callback: method, base=lang/method, options={parentState=DECLARED|DEFINED, parentType=x/visitor}::
+  int16 construct() method
+
+class visitor: class, private, options={defaultProcedureType=x/callback}::
+  parser: x/parser
+  int16 construct()
+
+// Utility function to feed a file to a parser
+int16 parseFile(object instance, string file, object visitor)
+
+
