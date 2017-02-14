@@ -392,8 +392,20 @@ corto_route _x_parser_findRoute(
                 args[1] = instance,
                 args[2] = &routerData->value;
                 corto_callb(corto_function(callback), NULL, args);
-                result = NULL;
             }
+
+            /* If visitor implements matched, call it for every rule */
+            callback = corto_interface_resolveMethod(
+                corto_typeof(visitor), "_matched");
+            if (callback) {
+                void *args[3];
+                args[0] = &visitor;
+                args[1] = instance,
+                args[2] = &routerData->value;
+                corto_callb(corto_function(callback), NULL, args);
+            }
+            
+            result = NULL;
         }
     }
     
