@@ -16,6 +16,7 @@ corto_int16 _x_rule_construct(
     x_rule this)
 {
 /* $begin(corto/x/rule/construct) */
+
     if (corto_route(this)->pattern) {
         this->pattern = corto_declareChild(corto_parentof(corto_parentof(this)), corto_idof(this), x_pattern_o);
         corto_setstr(&this->pattern->expr, corto_route(this)->pattern);
@@ -26,7 +27,7 @@ corto_int16 _x_rule_construct(
 
         corto_asprintf(&this->regex, "^%s$", this->pattern->regex);
 
-        corto_trace("%s: regex = %s", corto_idof(this), this->regex);
+        corto_trace("x: '%s' regex = '%s'", corto_idof(this), this->regex);
 
         /* Compile regular expression */
         regex_t *regex = corto_alloc(sizeof(regex_t));
@@ -44,9 +45,10 @@ corto_int16 _x_rule_construct(
         goto error;
     }
 
-    /* Overwrite type of 'node' to match the type of the pattern */
+    /* Overwrite type of 'data' to match the type of the pattern */
     if (this->pattern) {
-        corto_setref(&corto_function(this)->parameters.buffer[0].type, this->pattern);
+        corto_uint32 length = corto_function(this)->parameters.length;
+        corto_setref(&corto_function(this)->parameters.buffer[length - 1].type, this->pattern);
     }
 
     return 0;

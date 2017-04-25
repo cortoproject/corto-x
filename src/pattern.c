@@ -14,7 +14,8 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
     corto_bool implicitName = FALSE;
     corto_id id1, id2;
     char *idPtr = id1;
-    char *elementName = NULL, *tokenName = NULL;
+    char *elementName = NULL, *tokenName = NULL, *regexLiteral;
+    int regexLiteralCount = 0;
     corto_type elementType = corto_type(corto_string_o);
 
     if (ptr[0] == ':') {
@@ -31,6 +32,7 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
 
     if (ch == ':') {
         if (implicitName) {
+            /* ':something:' */
             corto_seterr("invalid element expression");
             goto error;
         }
@@ -38,6 +40,28 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
         /* parsed identifier is element name, parse token */
         idPtr = id2;
         ptr ++;
+
+        if (ptr[0] == '(') {
+            ptr ++;
+            regexLiteral = ptr;
+            for (; (ch = *ptr) && (ch != ')'); ptr ++) {
+                if (ch == '(') {
+                    corto_seterr("unexpected '(' in regex literal");
+                    goto error;
+                }
+                regexLiteralCount++;
+            }
+            if (ch != ')') {
+                corto_seterr("expected ')' after '('");
+                goto error;
+            }
+            ptr ++;
+            if (ptr[0] != '}') {
+                corto_seterr("expected ')}' after '{('");
+                goto error;
+            }
+        }
+
         for (; (ch = *ptr) && (ch != ':') && (ch != '}'); ptr++) {
             *idPtr = ch;
             idPtr++;
@@ -60,24 +84,32 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
         goto error;
     }
 
-    /* parsed identifier is a token/pattern */
-    corto_object token = corto_lookup(scope, tokenName);
-    if (!token) {
-        corto_seterr("unresolved token/pattern '%s'", tokenName);
-        goto error;
-    }
+    corto_object token = NULL;
+    if (!regexLiteralCount) {
+        /* parsed identifier is a token/pattern */
+        token = corto_lookup(scope, tokenName);
+        if (!token) {
+            corto_seterr("unresolved token/pattern '%s'", tokenName);
+            goto error;
+        }
 
-    if (corto_instanceof(x_pattern_o, token)) {
-        corto_buffer_appendstr(regex, x_pattern(token)->regex);
-        elementType = x_pattern(token)->type;
-    } else if (corto_instanceof(x_token_o, token)) {
-        corto_buffer_append(regex, "(%s)", x_token(token)->regex);
-        elementType = x_token(token)->type;
+        if (corto_instanceof(x_pattern_o, token)) {
+            corto_buffer_appendstr(regex, x_pattern(token)->regex);
+            elementType = x_pattern(token)->type;
+        } else if (corto_instanceof(x_token_o, token)) {
+            corto_buffer_append(regex, "(%s)", x_token(token)->regex);
+            elementType = x_token(token)->type;
+        } else {
+            corto_seterr(
+                "identifier '%s' does not resolve to pattern or token (type is '%s')",
+                tokenName, corto_fullpath(NULL, corto_typeof(token)));
+            goto error;
+        }
     } else {
-        corto_seterr(
-            "identifier '%s' does not resolve to pattern or token (type is '%s')",
-            tokenName, corto_fullpath(NULL, corto_typeof(token)));
-        goto error;
+        if (elementName) corto_buffer_appendstr(regex, "(");
+        corto_buffer_appendstrn(regex, regexLiteral, regexLiteralCount);
+        if (elementName) corto_buffer_appendstr(regex, ")");
+        elementType = corto_type(corto_string_o);
     }
 
     if (elementName) {
@@ -91,11 +123,10 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
         /* The parameter list determines how matched subexpressions should be
          * copied into an instance of this pattern */
         if (elementType->kind == CORTO_PRIMITIVE) {
-            x_pattern_parameterAssign(
-                x_pattern_parameterListAppendAlloc(this->params),
-                elementName,
-                elementType
-            );
+            x_pattern_parameter *p = corto_new(x_pattern_parameter_o);
+            corto_setstr(&p->name, elementName);
+            corto_setref(&p->type, elementType);
+            corto_llAppend(this->params, p);
         } else if (elementType->kind == CORTO_COMPOSITE) {
             /* Copy members from nested pattern, prefix with elementName */
             corto_id name;
@@ -105,23 +136,23 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
                 if (p->name) {
                     sprintf(name, "%s.%s", elementName, p->name);
                 }
-                x_pattern_parameterAssign(
-                    x_pattern_parameterListAppendAlloc(this->params),
-                    p->name ? name : NULL,
-                    p->type
-                );
+                x_pattern_parameter *newParam = corto_new(x_pattern_parameter_o);
+                corto_setstr(&newParam->name, p->name ? name : NULL);
+                corto_setref(&newParam->type, p->type);
+                corto_llAppend(this->params, newParam);
             }
         }
     } else {
-        x_pattern_parameterAssign(
-            x_pattern_parameterListAppendAlloc(this->params),
-            NULL,
-            elementType
-        );
+        x_pattern_parameter *p = corto_new(x_pattern_parameter_o);
+        corto_setstr(&p->name, NULL);
+        corto_setref(&p->type, elementType);
+        corto_llAppend(this->params, p);
     }
 
-    corto_llInsert(this->deps, token);
-    corto_release(token);
+    if (token) {
+        corto_llInsert(this->deps, token);
+        corto_release(token);
+    }
 
     return ptr;
 error:
@@ -191,6 +222,9 @@ corto_int16 _x_pattern_construct(
             break;
         case '$':
             corto_buffer_appendstr(&regex, "\\$");
+            break;
+        case '/':
+            corto_buffer_appendstr(&regex, "\\/");
             break;
         default:
             corto_buffer_append(&regex, "%c", ch);

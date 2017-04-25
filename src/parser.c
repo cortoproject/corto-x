@@ -18,6 +18,7 @@ typedef struct x_parser_beadRule x_parser_beadRule;
 struct x_parser_beadRule {
     corto_route rule;
     regex_t regex;
+    corto_bool empty;
 };
 
 typedef struct x_parser_bead x_parser_bead;
@@ -39,18 +40,19 @@ x_parser_bead *x_parser_beadNew(void) {
 x_parser_beadRule *x_parser_beadRuleNew(x_rule rule) {
     x_parser_beadRule *result = corto_calloc(sizeof(x_parser_beadRule));
     result->rule = corto_route(rule);
+    result->empty = FALSE;
     return result;
 }
 
 void x_parser_printBeads(x_parser_bead *bead, int indent) {
     corto_iter it;
-    corto_trace("%*s> bead '%s'", indent * 2, "", bead->expr);
+    corto_trace("x: %*s> bead '%s'", indent * 2, "", bead->expr);
 
     if (bead->rules) {
         it = corto_llIter(bead->rules);
         while (corto_iterHasNext(&it)) {
             x_parser_beadRule *r = corto_iterNext(&it);
-            corto_trace("%*s  - rule '%s'", indent * 2, "", &r->rule->pattern[bead->offset]);
+            corto_trace("x: %*s  - rule '%s'", indent * 2, "", &r->rule->pattern[bead->offset]);
         }
     }
 
@@ -78,7 +80,7 @@ corto_bool x_parser_beadMajorityInBeads(x_parser_bead *bead, char ch) {
 
 corto_string x_parser_regexFromExpr(x_parser this, corto_string expr) {
     x_pattern p = corto_declare(x_pattern_o);
-    corto_string result;
+    corto_string result = NULL;
     if (!p) {
         goto error;
     }
@@ -87,7 +89,9 @@ corto_string x_parser_regexFromExpr(x_parser this, corto_string expr) {
     if (corto_define(p)) {
         goto error;
     }
-    corto_asprintf(&result, "^%s", p->regex);
+    if (p->regex) {
+        corto_asprintf(&result, "^%s", p->regex);
+    }
     corto_delete(p);
     return result;
 error:
@@ -123,8 +127,12 @@ corto_int16 x_parser_compileBeads(x_parser this, x_parser_bead *bead) {
         while (corto_iterHasNext(&it)) {
             x_parser_beadRule *r = corto_iterNext(&it);
             corto_string regex = x_parser_regexFromExpr(this, &r->rule->pattern[bead->offset]);
-            if (regcomp(&r->regex, regex, REG_EXTENDED)) {
-                goto error;
+            if (!regex) {
+                r->empty = TRUE;
+            } else {
+                if (regcomp(&r->regex, regex, REG_EXTENDED)) {
+                    goto error;
+                }
             }
             corto_dealloc(regex);
         }
@@ -187,8 +195,14 @@ corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
         it = corto_llIter(b->rules);
         while (corto_iterHasNext(&it)) {
             x_parser_beadRule *rule = corto_iterNext(&it);
-            if (!regexec(&rule->regex, ptr, 0, NULL, 0)) {
-                return rule->rule;
+            if (rule->empty) {
+                if (!ptr[0]) {
+                    return rule->rule;
+                }
+            } else {
+                if (!regexec(&rule->regex, ptr, 0, NULL, 0)) {
+                    return rule->rule;
+                }
             }
         }
     }
@@ -221,7 +235,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
     int prev = 0;
     do {
         corto_int32 n, n_prev = 0, count = 0, max = 0;
-        char majority = 0, ch;
+        char majority = 0, ch = 0;
 
         changed = FALSE;
         n_prev = 0;
@@ -357,7 +371,7 @@ error:
 /* $end */
 }
 
-corto_route _x_parser_findRoute(
+corto_route _x_parser_findRoute_v(
     x_parser this,
     corto_object instance,
     corto_stringseq pattern,
@@ -367,7 +381,7 @@ corto_route _x_parser_findRoute(
 /* $begin(corto/x/parser/findRoute) */
     // Uncomment this line to switch to legacy lookup of routes (slow)
     // return corto_routerimpl_findRoute_v(this, pattern, param, routerData);
-    
+
     // Find route in optimized parser administration
     x_parser_bead *b = (x_parser_bead*)this->ruleChain;
 
@@ -375,12 +389,13 @@ corto_route _x_parser_findRoute(
     if (result) {
         /* matchRoute extracts data from the string and stores it in routerData */
         if (x_parser_matchRoute(this, result, pattern, param, routerData)) {
+            printf("matchRoute error\n");
             goto error;
         }
 
         /* If parameter is set to a visitor, call visitor and return NULL, so
          * the router won't invoke the rule of the parser class */
-        if (param.value) {
+        if (param.value && corto_typeof(param.type) == corto_type(x_visitor_o)) {
             corto_object visitor = param.value;
             corto_method callback = corto_interface_resolveMethod(
                 corto_typeof(visitor), corto_idof(result));
@@ -415,7 +430,7 @@ error:
 /* $end */
 }
 
-corto_int32 _x_parser_matchRoute(
+corto_int32 _x_parser_matchRoute_v(
     x_parser this,
     corto_route route,
     corto_stringseq pattern,
@@ -425,10 +440,11 @@ corto_int32 _x_parser_matchRoute(
 /* $begin(corto/x/parser/matchRoute) */
     x_rule rule = x_rule(route);
     regex_t *regex = (regex_t*)rule->compiledRegex;
-    int ret = -1;
+    int ret = regex ? -1 : 0;
 
     if (regex) {
         regmatch_t *match = alloca(sizeof(regmatch_t) * (regex->re_nsub + 1));
+
         ret = regexec(regex, pattern.buffer[0], (size_t)regex->re_nsub + 1, match, 0);
 
         if (!ret) {
