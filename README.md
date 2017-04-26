@@ -4,7 +4,7 @@ The corto/x project is a line-based regex based parser that invokes rules when t
 - match HTTP requests against a set of routes
 
 ### The format
-Because regular expressions are a pain to read and write, and keeping a long list of regular expressions to match, for example, a logfile would be a hell to maintain, `corto/x` introduces a syntax that allows you to write human-readable regular expressions. An example:
+Because regular expressions are a pain to read and write, and `corto/x` definitions are going to contain lots of them, the project introduces a syntax that allows you to write reusable & human-readable regular expressions. An example:
 ```
 x/token id: "[a-zA-Z][a-zA-Z_0-9]*"
 x/token number: "[0-9]", type=int32
@@ -38,7 +38,7 @@ syntax | description
 Note that a type always refers to an `x/token` or `x/rule`, never to an `x/rule`.
 
 ### Code generation
-Think of `x/token`'s as primitive types, and `x/pattern` as composite types, because that is actually what they are. The `x/pattern` "time" and "header" from the example above translate into the following types:
+Think of `x/token`'s as primitive types, and `x/pattern` as composite types, because that is actually what they are. The `x/pattern`'s "time" and "header" from the example above translate into the following types:
 ```
 struct time::
   sec, nanosec: int32
@@ -59,9 +59,9 @@ the parser will build a parser tree that looks like this:
 ```
 - "Hello"
   - "!!!": rule3
-  - [A-z]
+  - " [A-z]"
      - "": rule1
-     - "times [0-9]": rule2
+     - " times [0-9]": rule2
 ```
 This ensures that common parts in regular expressions are never evaluated more than once per input line, which allows for very fast parsing.
 
