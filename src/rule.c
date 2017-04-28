@@ -12,7 +12,7 @@
 #include <regex.h>   
 /* $end */
 
-corto_int16 _x_rule_construct(
+int16_t _x_rule_construct(
     x_rule this)
 {
 /* $begin(corto/x/rule/construct) */
@@ -57,7 +57,7 @@ error:
 /* $end */
 }
 
-corto_void _x_rule_destruct(
+void _x_rule_destruct(
     x_rule this)
 {
 /* $begin(corto/x/rule/destruct) */

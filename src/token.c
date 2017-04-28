@@ -8,7 +8,7 @@
 
 #include <corto/x/x.h>
 
-corto_int16 _x_token_construct(
+int16_t _x_token_construct(
     x_token this)
 {
 /* $begin(corto/x/token/construct) */
@@ -18,7 +18,7 @@ corto_int16 _x_token_construct(
 /* $end */
 }
 
-corto_int16 _x_token_init(
+int16_t _x_token_init(
     x_token this)
 {
 /* $begin(corto/x/token/init) */

@@ -8,7 +8,7 @@
 
 #include <corto/x/x.h>
 
-corto_int16 _x_callback_construct(
+int16_t _x_callback_construct(
     x_callback this)
 {
 /* $begin(corto/x/callback/construct) */

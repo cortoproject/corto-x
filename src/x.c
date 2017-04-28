@@ -8,7 +8,7 @@
 
 #include <corto/x/x.h>
 
-corto_int16 _x_parseFile(
+int16_t _x_parseFile(
     corto_object instance,
     corto_string file,
     corto_object visitor)

@@ -8,7 +8,7 @@
 
 #include <corto/x/x.h>
 
-corto_int16 _x_visitor_construct(
+int16_t _x_visitor_construct(
     x_visitor this)
 {
 /* $begin(corto/x/visitor/construct) */

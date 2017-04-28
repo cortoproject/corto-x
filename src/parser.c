@@ -156,7 +156,7 @@ corto_bool x_parser_cleanEmptyBeads(x_parser_bead *bead) {
             corto_llFree(bead->beads);
             bead->beads = NULL;
         }
-    }   
+    }
     if (bead->rules) {
         if (!corto_llSize(bead->rules)) {
             corto_llFree(bead->rules);
@@ -278,7 +278,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
                 break;
             }
 
-            corto_debug(">> majority = '%c', total = %d, max = %d, prev = %d, n = %d, n_prev = %d\n", 
+            corto_debug(">> majority = '%c', total = %d, max = %d, prev = %d, n = %d, n_prev = %d\n",
                 majority, corto_llSize(b_cur->rules), max, prev, n, n_prev);
 
             if ((prev != max) && (!prev || ((prev - max) >= X_BEAD_GROUP_MIN))) {
@@ -348,10 +348,10 @@ x_parser_bead* x_parser_optimize(x_parser this) {
     return b_root;
 error:
     return NULL;
-} 
+}
 /* $end */
 
-corto_int16 _x_parser_construct(
+int16_t _x_parser_construct(
     x_parser this)
 {
 /* $begin(corto/x/parser/construct) */
@@ -399,7 +399,7 @@ corto_route _x_parser_findRoute_v(
             corto_object visitor = param.value;
             corto_method callback = corto_interface_resolveMethod(
                 corto_typeof(visitor), corto_idof(result));
-            
+
             /* Visitor doesn't necessarily implement callbacks for all rules */
             if (callback) {
                 void *args[3];
@@ -419,18 +419,18 @@ corto_route _x_parser_findRoute_v(
                 args[2] = &routerData->value;
                 corto_callb(corto_function(callback), NULL, args);
             }
-            
+
             result = NULL;
         }
     }
-    
+
     return result;
 error:
     return NULL;
 /* $end */
 }
 
-corto_int32 _x_parser_matchRoute_v(
+int32_t _x_parser_matchRoute_v(
     x_parser this,
     corto_route route,
     corto_stringseq pattern,
@@ -456,7 +456,7 @@ corto_int32 _x_parser_matchRoute_v(
                 if (!p->name) {
                     continue;
                 }
-                
+
                 corto_id substr;
                 char *substrPtr = substr;
                 memcpy(substr, &pattern.buffer[0][match[i].rm_so], match[i].rm_eo - match[i].rm_so);
@@ -465,7 +465,7 @@ corto_int32 _x_parser_matchRoute_v(
                 /* Assign member of result object */
                 corto_value o, m, v, r;
                 o = corto_value_object(result, NULL);
-                corto_int16 ret = corto_value_getMember(&o, p->name, &m);
+                corto_int16 ret = corto_value_memberof(&o, p->name, &m);
                 if (ret) {
                     corto_seterr("invalid parameter '%s': %s", p->name, corto_lasterr());
                     corto_delete(result);
@@ -473,8 +473,8 @@ corto_int32 _x_parser_matchRoute_v(
                 }
 
                 r = corto_value_init();
-                v = corto_value_value(corto_string_o, &substrPtr);
-                corto_value_binaryOperator(CORTO_ASSIGN, &m, &v, &r);
+                v = corto_value_value(&substrPtr, corto_string_o);
+                corto_value_binaryOp(CORTO_ASSIGN, &m, &v, &r);
                 corto_value_free(&r);
             }
 
@@ -485,7 +485,7 @@ corto_int32 _x_parser_matchRoute_v(
 
             routerData->type = corto_type(rule->pattern);
             routerData->value = result;
-            
+
         } else if (ret != REG_NOMATCH) {
             corto_seterr("x: error matching regex");
         }

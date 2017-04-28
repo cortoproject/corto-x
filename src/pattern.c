@@ -159,7 +159,7 @@ error:
     return NULL;
 }
 /* $end */
-corto_int16 _x_pattern_construct(
+int16_t _x_pattern_construct(
     x_pattern this)
 {
 /* $begin(corto/x/pattern/construct) */
@@ -240,7 +240,7 @@ error:
 /* $end */
 }
 
-corto_int16 _x_pattern_init(
+int16_t _x_pattern_init(
     x_pattern this)
 {
 /* $begin(corto/x/pattern/init) */
