@@ -123,7 +123,7 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
         /* The parameter list determines how matched subexpressions should be
          * copied into an instance of this pattern */
         if (elementType->kind == CORTO_PRIMITIVE) {
-            x_pattern_parameter *p = corto_new(x_pattern_parameter_o);
+            x_pattern_parameter *p = corto_ptr_new(x_pattern_parameter_o);
             corto_setstr(&p->name, elementName);
             corto_setref(&p->type, elementType);
             corto_llAppend(this->params, p);
@@ -131,19 +131,19 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
             /* Copy members from nested pattern, prefix with elementName */
             corto_id name;
             corto_iter it = corto_llIter(x_pattern(token)->params);
-            while (corto_iterHasNext(&it)) {
-                x_pattern_parameter *p = corto_iterNext(&it);
+            while (corto_iter_hasNext(&it)) {
+                x_pattern_parameter *p = corto_iter_next(&it);
                 if (p->name) {
                     sprintf(name, "%s.%s", elementName, p->name);
                 }
-                x_pattern_parameter *newParam = corto_new(x_pattern_parameter_o);
+                x_pattern_parameter *newParam = corto_ptr_new(x_pattern_parameter_o);
                 corto_setstr(&newParam->name, p->name ? name : NULL);
                 corto_setref(&newParam->type, p->type);
                 corto_llAppend(this->params, newParam);
             }
         }
     } else {
-        x_pattern_parameter *p = corto_new(x_pattern_parameter_o);
+        x_pattern_parameter *p = corto_ptr_new(x_pattern_parameter_o);
         corto_setstr(&p->name, NULL);
         corto_setref(&p->type, elementType);
         corto_llAppend(this->params, p);

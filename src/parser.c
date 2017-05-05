@@ -50,16 +50,16 @@ void x_parser_printBeads(x_parser_bead *bead, int indent) {
 
     if (bead->rules) {
         it = corto_llIter(bead->rules);
-        while (corto_iterHasNext(&it)) {
-            x_parser_beadRule *r = corto_iterNext(&it);
+        while (corto_iter_hasNext(&it)) {
+            x_parser_beadRule *r = corto_iter_next(&it);
             corto_trace("x: %*s  - rule '%s'", indent * 2, "", &r->rule->pattern[bead->offset]);
         }
     }
 
     if (bead->beads) {
         it = corto_llIter(bead->beads);
-        while (corto_iterHasNext(&it)) {
-            x_parser_bead *b = corto_iterNext(&it);
+        while (corto_iter_hasNext(&it)) {
+            x_parser_bead *b = corto_iter_next(&it);
             x_parser_printBeads(b, indent + 1);
         }
     }
@@ -68,8 +68,8 @@ void x_parser_printBeads(x_parser_bead *bead, int indent) {
 corto_bool x_parser_beadMajorityInBeads(x_parser_bead *bead, char ch) {
     if (bead->beads) {
         corto_iter it = corto_llIter(bead->beads);
-        while (corto_iterHasNext(&it)) {
-            x_parser_bead *b = corto_iterNext(&it);
+        while (corto_iter_hasNext(&it)) {
+            x_parser_bead *b = corto_iter_next(&it);
             if (b->expr && (b->expr[0] == ch)) {
                 return TRUE;
             }
@@ -114,8 +114,8 @@ corto_int16 x_parser_compileBeads(x_parser this, x_parser_bead *bead) {
 
     if (bead->beads) {
         corto_iter it = corto_llIter(bead->beads);
-        while (corto_iterHasNext(&it)) {
-            x_parser_bead *b = corto_iterNext(&it);
+        while (corto_iter_hasNext(&it)) {
+            x_parser_bead *b = corto_iter_next(&it);
             if (x_parser_compileBeads(this, b)) {
                 goto error;
             }
@@ -124,8 +124,8 @@ corto_int16 x_parser_compileBeads(x_parser this, x_parser_bead *bead) {
 
     if (bead->rules) {
         corto_iter it = corto_llIter(bead->rules);
-        while (corto_iterHasNext(&it)) {
-            x_parser_beadRule *r = corto_iterNext(&it);
+        while (corto_iter_hasNext(&it)) {
+            x_parser_beadRule *r = corto_iter_next(&it);
             corto_string regex = x_parser_regexFromExpr(this, &r->rule->pattern[bead->offset]);
             if (!regex) {
                 r->empty = TRUE;
@@ -146,8 +146,8 @@ error:
 corto_bool x_parser_cleanEmptyBeads(x_parser_bead *bead) {
     if (bead->beads) {
         corto_iter it = corto_llIter(bead->beads);
-        while (corto_iterHasNext(&it)) {
-            x_parser_bead *b = corto_iterNext(&it);
+        while (corto_iter_hasNext(&it)) {
+            x_parser_bead *b = corto_iter_next(&it);
             if (x_parser_cleanEmptyBeads(b)) {
                 corto_llRemove(bead->beads, b);
             }
@@ -183,8 +183,8 @@ corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
     /* If string matches (or if bead is root) first look in other beads */
     if (b->beads) {
         it = corto_llIter(b->beads);
-        while (corto_iterHasNext(&it)) {
-            x_parser_bead *bead = corto_iterNext(&it);
+        while (corto_iter_hasNext(&it)) {
+            x_parser_bead *bead = corto_iter_next(&it);
             corto_route result = x_parser_findRouteInBeads(bead, ptr);
             if (result) return result;
         }
@@ -193,8 +193,8 @@ corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
     /* If no match is found in other beads, look in own rules */
     if (b->rules) {
         it = corto_llIter(b->rules);
-        while (corto_iterHasNext(&it)) {
-            x_parser_beadRule *rule = corto_iterNext(&it);
+        while (corto_iter_hasNext(&it)) {
+            x_parser_beadRule *rule = corto_iter_next(&it);
             if (rule->empty) {
                 if (!ptr[0]) {
                     return rule->rule;
@@ -248,8 +248,8 @@ x_parser_bead* x_parser_optimize(x_parser this) {
             majority = '\0';
             it = corto_llIter(b_cur->rules);
 
-            while (corto_iterHasNext(&it)) {
-                x_parser_beadRule *r = corto_iterNext(&it);
+            while (corto_iter_hasNext(&it)) {
+                x_parser_beadRule *r = corto_iter_next(&it);
                 if (r->rule->pattern) {
                     if (!(ch = r->rule->pattern[n])) {
                         break;
@@ -257,8 +257,8 @@ x_parser_bead* x_parser_optimize(x_parser this) {
                     if (!majority || (ch != majority)) {
                         count = 0;
                         corto_iter it2 = corto_llIter(b_cur->rules);
-                        for (i = 0; corto_iterHasNext(&it2); i++) {
-                            x_parser_beadRule *r = corto_iterNext(&it2);
+                        for (i = 0; corto_iter_hasNext(&it2); i++) {
+                            x_parser_beadRule *r = corto_iter_next(&it2);
                             if (r->rule->pattern) {
                                 if (r->rule->pattern[n] == ch) {
                                     count++;
@@ -295,8 +295,8 @@ x_parser_bead* x_parser_optimize(x_parser this) {
 
                 /* Move matching rules to new bead */
                 it = corto_llIter(b_cur->rules);
-                while (corto_iterHasNext(&it)) {
-                    x_parser_beadRule *r = corto_iterNext(&it);
+                while (corto_iter_hasNext(&it)) {
+                    x_parser_beadRule *r = corto_iter_next(&it);
                     if (r->rule->pattern && (r->rule->pattern[n] == majority)) {
                         corto_llRemove(b_cur->rules, r);
                         corto_llAppend(b->rules, r);
@@ -315,8 +315,8 @@ x_parser_bead* x_parser_optimize(x_parser this) {
 
                 if (prev != max) {
                     it = corto_llIter(b_cur->rules);
-                    while (corto_iterHasNext(&it)) {
-                        x_parser_beadRule *r = corto_iterNext(&it);
+                    while (corto_iter_hasNext(&it)) {
+                        x_parser_beadRule *r = corto_iter_next(&it);
                         if (r->rule->pattern && (r->rule->pattern[n] != majority)) {
                             corto_llRemove(b_cur->rules, r);
                             corto_llAppend(b_cur->prev->rules, r);
@@ -472,7 +472,7 @@ int32_t _x_parser_matchRoute_v(
                     goto error;
                 }
 
-                r = corto_value_init();
+                r = corto_value_empty();
                 v = corto_value_value(&substrPtr, corto_string_o);
                 corto_value_binaryOp(CORTO_ASSIGN, &m, &v, &r);
                 corto_value_free(&r);
