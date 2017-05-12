@@ -23,7 +23,7 @@ int16_t _x_token_init(
 {
 /* $begin(corto/x/token/init) */
 
-    corto_setref(&this->type, corto_string_o);
+    corto_ptr_setref(&this->type, corto_string_o);
     return 0;
 /* $end */
 }

@@ -115,7 +115,7 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
     if (elementName) {
         /* Create member of element type in pattern */
         corto_member m = corto_declareChild(this, elementName, corto_member_o);
-        corto_setref(&m->type, elementType);
+        corto_ptr_setref(&m->type, elementType);
         if (corto_define(m)) {
             goto error;
         }
@@ -124,33 +124,33 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
          * copied into an instance of this pattern */
         if (elementType->kind == CORTO_PRIMITIVE) {
             x_pattern_parameter *p = corto_ptr_new(x_pattern_parameter_o);
-            corto_setstr(&p->name, elementName);
-            corto_setref(&p->type, elementType);
-            corto_llAppend(this->params, p);
+            corto_ptr_setstr(&p->name, elementName);
+            corto_ptr_setref(&p->type, elementType);
+            corto_ll_append(this->params, p);
         } else if (elementType->kind == CORTO_COMPOSITE) {
             /* Copy members from nested pattern, prefix with elementName */
             corto_id name;
-            corto_iter it = corto_llIter(x_pattern(token)->params);
+            corto_iter it = corto_ll_iter(x_pattern(token)->params);
             while (corto_iter_hasNext(&it)) {
                 x_pattern_parameter *p = corto_iter_next(&it);
                 if (p->name) {
                     sprintf(name, "%s.%s", elementName, p->name);
                 }
                 x_pattern_parameter *newParam = corto_ptr_new(x_pattern_parameter_o);
-                corto_setstr(&newParam->name, p->name ? name : NULL);
-                corto_setref(&newParam->type, p->type);
-                corto_llAppend(this->params, newParam);
+                corto_ptr_setstr(&newParam->name, p->name ? name : NULL);
+                corto_ptr_setref(&newParam->type, p->type);
+                corto_ll_append(this->params, newParam);
             }
         }
     } else {
         x_pattern_parameter *p = corto_ptr_new(x_pattern_parameter_o);
-        corto_setstr(&p->name, NULL);
-        corto_setref(&p->type, elementType);
-        corto_llAppend(this->params, p);
+        corto_ptr_setstr(&p->name, NULL);
+        corto_ptr_setref(&p->type, elementType);
+        corto_ll_append(this->params, p);
     }
 
     if (token) {
-        corto_llInsert(this->deps, token);
+        corto_ll_insert(this->deps, token);
         corto_release(token);
     }
 
@@ -166,7 +166,7 @@ int16_t _x_pattern_construct(
     corto_buffer regex = CORTO_BUFFER_INIT;
 
     if (!this->scope) {
-        corto_setref(&this->scope, corto_parentof(this));
+        corto_ptr_setref(&this->scope, corto_parentof(this));
     }
 
     char *ptr, ch;
@@ -244,7 +244,7 @@ int16_t _x_pattern_init(
     x_pattern this)
 {
 /* $begin(corto/x/pattern/init) */
-    corto_setref(&this->type, this);
+    corto_ptr_setref(&this->type, this);
     return corto_struct_init(this);
 /* $end */
 }

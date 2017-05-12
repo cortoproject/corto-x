@@ -33,7 +33,7 @@ struct x_parser_bead {
 
 x_parser_bead *x_parser_beadNew(void) {
     x_parser_bead  *result = corto_calloc(sizeof(x_parser_bead));
-    result->rules = corto_llNew();
+    result->rules = corto_ll_new();
     return result;
 }
 
@@ -49,7 +49,7 @@ void x_parser_printBeads(x_parser_bead *bead, int indent) {
     corto_trace("x: %*s> bead '%s'", indent * 2, "", bead->expr);
 
     if (bead->rules) {
-        it = corto_llIter(bead->rules);
+        it = corto_ll_iter(bead->rules);
         while (corto_iter_hasNext(&it)) {
             x_parser_beadRule *r = corto_iter_next(&it);
             corto_trace("x: %*s  - rule '%s'", indent * 2, "", &r->rule->pattern[bead->offset]);
@@ -57,7 +57,7 @@ void x_parser_printBeads(x_parser_bead *bead, int indent) {
     }
 
     if (bead->beads) {
-        it = corto_llIter(bead->beads);
+        it = corto_ll_iter(bead->beads);
         while (corto_iter_hasNext(&it)) {
             x_parser_bead *b = corto_iter_next(&it);
             x_parser_printBeads(b, indent + 1);
@@ -67,7 +67,7 @@ void x_parser_printBeads(x_parser_bead *bead, int indent) {
 
 corto_bool x_parser_beadMajorityInBeads(x_parser_bead *bead, char ch) {
     if (bead->beads) {
-        corto_iter it = corto_llIter(bead->beads);
+        corto_iter it = corto_ll_iter(bead->beads);
         while (corto_iter_hasNext(&it)) {
             x_parser_bead *b = corto_iter_next(&it);
             if (b->expr && (b->expr[0] == ch)) {
@@ -84,8 +84,8 @@ corto_string x_parser_regexFromExpr(x_parser this, corto_string expr) {
     if (!p) {
         goto error;
     }
-    corto_setstr(&p->expr, expr);
-    corto_setref(&p->scope, corto_parentof(this));
+    corto_ptr_setstr(&p->expr, expr);
+    corto_ptr_setref(&p->scope, corto_parentof(this));
     if (corto_define(p)) {
         goto error;
     }
@@ -113,7 +113,7 @@ corto_int16 x_parser_compileBeads(x_parser this, x_parser_bead *bead) {
     }
 
     if (bead->beads) {
-        corto_iter it = corto_llIter(bead->beads);
+        corto_iter it = corto_ll_iter(bead->beads);
         while (corto_iter_hasNext(&it)) {
             x_parser_bead *b = corto_iter_next(&it);
             if (x_parser_compileBeads(this, b)) {
@@ -123,7 +123,7 @@ corto_int16 x_parser_compileBeads(x_parser this, x_parser_bead *bead) {
     }
 
     if (bead->rules) {
-        corto_iter it = corto_llIter(bead->rules);
+        corto_iter it = corto_ll_iter(bead->rules);
         while (corto_iter_hasNext(&it)) {
             x_parser_beadRule *r = corto_iter_next(&it);
             corto_string regex = x_parser_regexFromExpr(this, &r->rule->pattern[bead->offset]);
@@ -145,21 +145,21 @@ error:
 
 corto_bool x_parser_cleanEmptyBeads(x_parser_bead *bead) {
     if (bead->beads) {
-        corto_iter it = corto_llIter(bead->beads);
+        corto_iter it = corto_ll_iter(bead->beads);
         while (corto_iter_hasNext(&it)) {
             x_parser_bead *b = corto_iter_next(&it);
             if (x_parser_cleanEmptyBeads(b)) {
-                corto_llRemove(bead->beads, b);
+                corto_ll_remove(bead->beads, b);
             }
         }
-        if (!corto_llSize(bead->beads)) {
-            corto_llFree(bead->beads);
+        if (!corto_ll_size(bead->beads)) {
+            corto_ll_free(bead->beads);
             bead->beads = NULL;
         }
     }
     if (bead->rules) {
-        if (!corto_llSize(bead->rules)) {
-            corto_llFree(bead->rules);
+        if (!corto_ll_size(bead->rules)) {
+            corto_ll_free(bead->rules);
             bead->rules = NULL;
         }
     }
@@ -182,7 +182,7 @@ corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
 
     /* If string matches (or if bead is root) first look in other beads */
     if (b->beads) {
-        it = corto_llIter(b->beads);
+        it = corto_ll_iter(b->beads);
         while (corto_iter_hasNext(&it)) {
             x_parser_bead *bead = corto_iter_next(&it);
             corto_route result = x_parser_findRouteInBeads(bead, ptr);
@@ -192,7 +192,7 @@ corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
 
     /* If no match is found in other beads, look in own rules */
     if (b->rules) {
-        it = corto_llIter(b->rules);
+        it = corto_ll_iter(b->rules);
         while (corto_iter_hasNext(&it)) {
             x_parser_beadRule *rule = corto_iter_next(&it);
             if (rule->empty) {
@@ -225,7 +225,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
             corto_route r = methods->buffer[i];
             if (r->pattern) {
                 x_parser_beadRule *br = x_parser_beadRuleNew(x_rule(r));
-                corto_llAppend(b_root->rules, br);
+                corto_ll_append(b_root->rules, br);
             }
         }
     }
@@ -246,7 +246,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
         do {
             max = 0;
             majority = '\0';
-            it = corto_llIter(b_cur->rules);
+            it = corto_ll_iter(b_cur->rules);
 
             while (corto_iter_hasNext(&it)) {
                 x_parser_beadRule *r = corto_iter_next(&it);
@@ -256,7 +256,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
                     }
                     if (!majority || (ch != majority)) {
                         count = 0;
-                        corto_iter it2 = corto_llIter(b_cur->rules);
+                        corto_iter it2 = corto_ll_iter(b_cur->rules);
                         for (i = 0; corto_iter_hasNext(&it2); i++) {
                             x_parser_beadRule *r = corto_iter_next(&it2);
                             if (r->rule->pattern) {
@@ -279,7 +279,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
             }
 
             corto_debug(">> majority = '%c', total = %d, max = %d, prev = %d, n = %d, n_prev = %d\n",
-                majority, corto_llSize(b_cur->rules), max, prev, n, n_prev);
+                majority, corto_ll_size(b_cur->rules), max, prev, n, n_prev);
 
             if ((prev != max) && (!prev || ((prev - max) >= X_BEAD_GROUP_MIN))) {
                 corto_debug(">> new bead '%s' -> '%c'\n", b_cur->expr, majority);
@@ -289,17 +289,17 @@ x_parser_bead* x_parser_optimize(x_parser this) {
                 b->expr[1] = '\0';
                 b->offset = b_cur->offset + 1;
                 if (!b_cur->beads) {
-                    b_cur->beads = corto_llNew();
+                    b_cur->beads = corto_ll_new();
                 }
-                corto_llAppend(b_cur->beads, b);
+                corto_ll_append(b_cur->beads, b);
 
                 /* Move matching rules to new bead */
-                it = corto_llIter(b_cur->rules);
+                it = corto_ll_iter(b_cur->rules);
                 while (corto_iter_hasNext(&it)) {
                     x_parser_beadRule *r = corto_iter_next(&it);
                     if (r->rule->pattern && (r->rule->pattern[n] == majority)) {
-                        corto_llRemove(b_cur->rules, r);
-                        corto_llAppend(b->rules, r);
+                        corto_ll_remove(b_cur->rules, r);
+                        corto_ll_append(b->rules, r);
                         corto_debug("moved from '%s'=>'%s' (%s)\n", b_cur->expr, b->expr, r->rule->pattern);
                         changed = TRUE;
                     }
@@ -314,12 +314,12 @@ x_parser_bead* x_parser_optimize(x_parser this) {
                 b_cur->offset ++;
 
                 if (prev != max) {
-                    it = corto_llIter(b_cur->rules);
+                    it = corto_ll_iter(b_cur->rules);
                     while (corto_iter_hasNext(&it)) {
                         x_parser_beadRule *r = corto_iter_next(&it);
                         if (r->rule->pattern && (r->rule->pattern[n] != majority)) {
-                            corto_llRemove(b_cur->rules, r);
-                            corto_llAppend(b_cur->prev->rules, r);
+                            corto_ll_remove(b_cur->rules, r);
+                            corto_ll_append(b_cur->prev->rules, r);
                             corto_debug("moved from '%s'=>'%s' (%s)\n", b_cur->expr, b_cur->prev->expr, r->rule->pattern);
                             changed = TRUE;
                         }
@@ -452,7 +452,7 @@ int32_t _x_parser_matchRoute_v(
 
             int i;
             for (i = 1; i <= regex->re_nsub; i++) {
-                x_pattern_parameter *p = corto_llGet(rule->pattern->params, i - 1);
+                x_pattern_parameter *p = corto_ll_get(rule->pattern->params, i - 1);
                 if (!p->name) {
                     continue;
                 }
@@ -465,7 +465,7 @@ int32_t _x_parser_matchRoute_v(
                 /* Assign member of result object */
                 corto_value o, m, v, r;
                 o = corto_value_object(result, NULL);
-                corto_int16 ret = corto_value_memberof(&o, p->name, &m);
+                corto_int16 ret = corto_value_memberExpr(&o, p->name, &m);
                 if (ret) {
                     corto_seterr("invalid parameter '%s': %s", p->name, corto_lasterr());
                     corto_delete(result);
