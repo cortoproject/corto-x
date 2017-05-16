@@ -8,7 +8,7 @@ class token::
   int16 init()
 
 // Patterns are composite expressions that can be reduced to a regex
-class pattern: struct, hidden, attr = attr_default|attr_scoped::
+class pattern: struct, hidden, attr = attr_default|attr_named::
   struct parameter::
     name: string
     type: lang/type
