@@ -1,14 +1,7 @@
-/* $CORTO_GENERATED
- *
- * parser.c
- *
- * Only code written between the begin and end tags will be preserved
- * when the file is regenerated.
- */
+/* This is a managed file. Do not delete this comment. */
 
 #include <corto/x/x.h>
 
-/* $header() */
 #include <regex.h>
 
 #define X_BEAD_GROUP_MIN (2)
@@ -349,12 +342,10 @@ x_parser_bead* x_parser_optimize(x_parser this) {
 error:
     return NULL;
 }
-/* $end */
 
-int16_t _x_parser_construct(
+int16_t x_parser_construct(
     x_parser this)
 {
-/* $begin(corto/x/parser/construct) */
     corto_int16 ret = corto_routerimpl_construct(this);
     if (ret) {
         goto error;
@@ -368,17 +359,15 @@ int16_t _x_parser_construct(
     return 0;
 error:
     return -1;
-/* $end */
 }
 
-corto_route _x_parser_findRoute_v(
+corto_route x_parser_findRoute_v(
     x_parser this,
     corto_object instance,
     corto_stringseq pattern,
     corto_any param,
     corto_any *routerData)
 {
-/* $begin(corto/x/parser/findRoute) */
     // Uncomment this line to switch to legacy lookup of routes (slow)
     // return corto_routerimpl_findRoute_v(this, pattern, param, routerData);
 
@@ -427,17 +416,15 @@ corto_route _x_parser_findRoute_v(
     return result;
 error:
     return NULL;
-/* $end */
 }
 
-int32_t _x_parser_matchRoute_v(
+int32_t x_parser_matchRoute_v(
     x_parser this,
     corto_route route,
     corto_stringseq pattern,
     corto_any param,
     corto_any *routerData)
 {
-/* $begin(corto/x/parser/matchRoute) */
     x_rule rule = x_rule(route);
     regex_t *regex = (regex_t*)rule->compiledRegex;
     int ret = regex ? -1 : 0;
@@ -494,5 +481,5 @@ int32_t _x_parser_matchRoute_v(
     return !ret ? 0 : -1;
 error:
     return -1;
-/* $end */
 }
+

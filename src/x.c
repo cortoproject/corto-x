@@ -1,19 +1,11 @@
-/* $CORTO_GENERATED
- *
- * x.c
- *
- * Only code written between the begin and end tags will be preserved
- * when the file is regenerated.
- */
+/* This is a managed file. Do not delete this comment. */
 
 #include <corto/x/x.h>
-
-int16_t _x_parseFile(
+int16_t x_parseFile(
     corto_object instance,
     corto_string file,
     corto_object visitor)
 {
-/* $begin(corto/x/parseFile) */
     FILE *f = fopen(file, "r");
     if (!f) {
         corto_seterr("x: could not open input file '%s': %s", file, corto_lasterr());
@@ -102,14 +94,12 @@ int16_t _x_parseFile(
     return 0;
 error:
     return -1;
-/* $end */
 }
 
 int xMain(int argc, char *argv[]) {
-/* $begin(main) */
 
     /* Insert implementation */
 
     return 0;
-/* $end */
 }
+

@@ -1,17 +1,9 @@
-/* $CORTO_GENERATED
- *
- * callback.c
- *
- * Only code written between the begin and end tags will be preserved
- * when the file is regenerated.
- */
+/* This is a managed file. Do not delete this comment. */
 
 #include <corto/x/x.h>
-
-int16_t _x_callback_construct(
+int16_t x_callback_construct(
     x_callback this)
 {
-/* $begin(corto/x/callback/construct) */
     corto_function f = corto_function(this);
     x_visitor visitor = x_visitor(corto_parentof(this));
 
@@ -39,5 +31,5 @@ int16_t _x_callback_construct(
     return corto_method_construct(this);
 error:
     return -1;
-/* $end */
 }
+

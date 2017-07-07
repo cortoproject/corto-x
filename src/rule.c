@@ -1,21 +1,12 @@
-/* $CORTO_GENERATED
- *
- * rule.c
- *
- * Only code written between the begin and end tags will be preserved
- * when the file is regenerated.
- */
+/* This is a managed file. Do not delete this comment. */
 
 #include <corto/x/x.h>
 
-/* $header() */
 #include <regex.h>   
-/* $end */
 
-int16_t _x_rule_construct(
+int16_t x_rule_construct(
     x_rule this)
 {
-/* $begin(corto/x/rule/construct) */
 
     if (corto_route(this)->pattern) {
         this->pattern = corto_declareChild(corto_parentof(corto_parentof(this)), corto_idof(this), x_pattern_o);
@@ -54,16 +45,14 @@ int16_t _x_rule_construct(
     return 0;
 error:
     return -1;
-/* $end */
 }
 
-void _x_rule_destruct(
+void x_rule_destruct(
     x_rule this)
 {
-/* $begin(corto/x/rule/destruct) */
 
     regfree((regex_t*)this->compiledRegex);
     corto_dealloc((regex_t*)this->compiledRegex);
 
-/* $end */
 }
+

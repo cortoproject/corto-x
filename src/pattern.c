@@ -1,14 +1,7 @@
-/* $CORTO_GENERATED
- *
- * pattern.c
- *
- * Only code written between the begin and end tags will be preserved
- * when the file is regenerated.
- */
+/* This is a managed file. Do not delete this comment. */
 
 #include <corto/x/x.h>
 
-/* $header(corto/x/pattern/construct) */
 char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, corto_object scope) {
     char *ptr = str, ch;
     corto_bool implicitName = FALSE;
@@ -158,11 +151,10 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
 error:
     return NULL;
 }
-/* $end */
-int16_t _x_pattern_construct(
+
+int16_t x_pattern_construct(
     x_pattern this)
 {
-/* $begin(corto/x/pattern/construct) */
     corto_buffer regex = CORTO_BUFFER_INIT;
 
     if (!this->scope) {
@@ -237,14 +229,12 @@ int16_t _x_pattern_construct(
     return corto_struct_construct(this);
 error:
     return -1;
-/* $end */
 }
 
-int16_t _x_pattern_init(
+int16_t x_pattern_init(
     x_pattern this)
 {
-/* $begin(corto/x/pattern/init) */
     corto_ptr_setref(&this->type, this);
     return corto_struct_init(this);
-/* $end */
 }
+
