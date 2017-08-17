@@ -1,18 +1,17 @@
 /* This is a managed file. Do not delete this comment. */
 
 #include <corto/x/x.h>
-
-#include <regex.h>   
+#include <regex.h> 
 
 int16_t x_rule_construct(
     x_rule this)
 {
-
     if (corto_route(this)->pattern) {
         this->pattern = corto_declareChild(corto_parentof(corto_parentof(this)), corto_idof(this), x_pattern_o);
         corto_ptr_setstr(&this->pattern->expr, corto_route(this)->pattern);
         corto_ptr_setref(&this->pattern->scope, corto_parentof(corto_parentof(this)));
         if (corto_define(this->pattern)) {
+            corto_seterr("%s: %s", corto_fullpath(NULL, this), corto_lasterr());
             goto error;
         }
 

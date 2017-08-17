@@ -229,6 +229,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
     do {
         corto_int32 n, n_prev = 0, count = 0, max = 0;
         char majority = 0, ch = 0;
+        bool inSubExpr = false;        
 
         changed = FALSE;
         n_prev = 0;
@@ -266,8 +267,15 @@ x_parser_bead* x_parser_optimize(x_parser this) {
                 }
             }
 
+            if (majority == '{') {
+                inSubExpr = true;
+            }
+            if (majority == '}') {
+                inSubExpr = false;
+            }
+
             /* If current majority is smaller than X_BEAD_GROUP_MIN, don't create new bead */
-            if (!ch || (max < X_BEAD_GROUP_MIN)) {
+            if (!ch || (max < X_BEAD_GROUP_MIN) || inSubExpr || (majority == '}')) {
                 break;
             }
 
