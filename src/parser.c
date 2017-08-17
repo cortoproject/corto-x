@@ -6,6 +6,7 @@
 
 #define X_BEAD_GROUP_MIN (2)
 #define X_BEAD_PATTERN_MIN (5)
+#define X_SUBEXPR_BUFF_SIZE (256)
 
 typedef struct x_parser_beadRule x_parser_beadRule;
 struct x_parser_beadRule {
@@ -45,7 +46,7 @@ void x_parser_printBeads(x_parser_bead *bead, int indent) {
         it = corto_ll_iter(bead->rules);
         while (corto_iter_hasNext(&it)) {
             x_parser_beadRule *r = corto_iter_next(&it);
-            corto_trace("x: %*s  - rule '%s'", indent * 2, "", &r->rule->pattern[bead->offset]);
+            corto_trace("x: %*s  - rule '%s' ('%s')", indent * 2, "", &r->rule->pattern[bead->offset], corto_idof(r->rule));
         }
     }
 
@@ -203,6 +204,36 @@ corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
     return NULL;
 }
 
+int x_parser_scanForMajority(char *expr, char *majorityBuffer) {
+    char *ptr, ch;
+    bool inlineRegex = false;
+
+    if (expr[0] == '{') {
+        for (ptr = expr; (ch = *ptr); ptr ++) {
+            majorityBuffer[ptr - expr] = ch;
+            if (ch == '(') {
+                inlineRegex = true;
+            } else if (ch == ')') {
+                inlineRegex = false;
+            } else if (ch == '\\') {
+                ptr ++;
+                majorityBuffer[ptr - expr] = ch;
+            }
+            if (!inlineRegex && ch == '}') {
+                ptr ++;
+                majorityBuffer[ptr - expr] = '}';
+                break;
+            }
+        }
+        majorityBuffer[ptr - expr] = '\0';
+    } else {
+        majorityBuffer[0] = expr[0];
+        majorityBuffer[1] = '\0';
+    }
+
+    return ptr - expr;
+}
+
 x_parser_bead* x_parser_optimize(x_parser this) {
     corto_objectseq *methods = &corto_interface(this)->methods;
     x_parser_bead *b_root = NULL, *b_cur = NULL;
@@ -227,68 +258,72 @@ x_parser_bead* x_parser_optimize(x_parser this) {
 
     int prev = 0;
     do {
-        corto_int32 n, n_prev = 0, count = 0, max = 0;
-        char majority = 0, ch = 0;
-        bool inSubExpr = false;        
+        corto_int32 n, count = 0, max = 0;
+        char ch = 0;
+        int len = 0;
+
+        /* The majority buffer holds a string that is shared by the majority
+         * of rules currently evaluated. The reason that this is a string and is
+         * not evaluated on a per-character basis is because subexpressions ({})
+         * must be evaluated atomically, and should not be split up. */
+        char buff[X_SUBEXPR_BUFF_SIZE];
+        char majority[X_SUBEXPR_BUFF_SIZE];
 
         changed = FALSE;
-        n_prev = 0;
         n = b_cur->offset;
 
-        corto_debug("\n==== ITER (%s, offset = %d)\n", b_cur->expr, n);
+        corto_trace("==== ITER ('%s', offset = %d)", b_cur->expr, n);
 
         do {
             max = 0;
-            majority = '\0';
+            majority[0] = '\0';
+            
             it = corto_ll_iter(b_cur->rules);
-
             while (corto_iter_hasNext(&it)) {
                 x_parser_beadRule *r = corto_iter_next(&it);
                 if (r->rule->pattern) {
-                    if (!(ch = r->rule->pattern[n])) {
+
+                    if (!(len = x_parser_scanForMajority(&r->rule->pattern[n], buff))) {
                         break;
                     }
-                    if (!majority || (ch != majority)) {
+                    if (!majority[0] || (strcmp(buff, majority))) {
                         count = 0;
                         corto_iter it2 = corto_ll_iter(b_cur->rules);
                         for (i = 0; corto_iter_hasNext(&it2); i++) {
                             x_parser_beadRule *r = corto_iter_next(&it2);
                             if (r->rule->pattern) {
-                                if (r->rule->pattern[n] == ch) {
+                                char patternBuff[X_SUBEXPR_BUFF_SIZE];
+                                x_parser_scanForMajority(&r->rule->pattern[n], patternBuff);
+                                if (!strncmp(patternBuff, buff, len)) {
                                     count++;
                                 }
                             }
                         }
                         if (count >= max && !x_parser_beadMajorityInBeads(b_cur, ch)) {
-                            majority = ch;
+                            strcpy(majority, buff);
                             max = count;
                         }
                     }
                 }
             }
 
-            if (majority == '{') {
-                inSubExpr = true;
-            }
-            if (majority == '}') {
-                inSubExpr = false;
-            }
-
             /* If current majority is smaller than X_BEAD_GROUP_MIN, don't create new bead */
-            if (!ch || (max < X_BEAD_GROUP_MIN) || inSubExpr || (majority == '}')) {
+            if (!strlen(majority) || (max < X_BEAD_GROUP_MIN)) {
                 break;
             }
 
-            corto_debug(">> majority = '%c', total = %d, max = %d, prev = %d, n = %d, n_prev = %d\n",
-                majority, corto_ll_size(b_cur->rules), max, prev, n, n_prev);
+            len = strlen(majority);
+
+            corto_trace(">> majority = '%s', total = %d, max = %d, prev = %d, n = %d",
+                majority, corto_ll_size(b_cur->rules), max, prev, n);
 
             if ((prev != max) && (!prev || ((prev - max) >= X_BEAD_GROUP_MIN))) {
-                corto_debug(">> new bead '%s' -> '%c'\n", b_cur->expr, majority);
+                corto_trace(">> new bead '%s' -> '%s'", b_cur->expr, majority);
+
                 x_parser_bead *b = x_parser_beadNew();
                 b->prev = b_cur;
-                b->expr[0] = majority;
-                b->expr[1] = '\0';
-                b->offset = b_cur->offset + 1;
+                strcpy(b->expr, majority);
+                b->offset = b_cur->offset + len;
                 if (!b_cur->beads) {
                     b_cur->beads = corto_ll_new();
                 }
@@ -298,30 +333,29 @@ x_parser_bead* x_parser_optimize(x_parser this) {
                 it = corto_ll_iter(b_cur->rules);
                 while (corto_iter_hasNext(&it)) {
                     x_parser_beadRule *r = corto_iter_next(&it);
-                    if (r->rule->pattern && (r->rule->pattern[n] == majority)) {
+                    if (r->rule->pattern && (!strncmp(&r->rule->pattern[n], majority, len))) {
                         corto_ll_remove(b_cur->rules, r);
                         corto_ll_append(b->rules, r);
-                        corto_debug("moved from '%s'=>'%s' (%s)\n", b_cur->expr, b->expr, r->rule->pattern);
+                        corto_trace("moved '%s' from '%s' to '%s'", corto_idof(r->rule), b_cur->expr, b->expr);
                         changed = TRUE;
                     }
                 }
 
-                n_prev = n;
                 b_cur = b;
+
             } else {
                 corto_int32 len = strlen(b_cur->expr);
-                b_cur->expr[len] = majority;
-                b_cur->expr[len + 1] = '\0';
-                b_cur->offset ++;
+                strcpy(&b_cur->expr[len], majority);
+                b_cur->offset += strlen(majority);
 
                 if (prev != max) {
                     it = corto_ll_iter(b_cur->rules);
                     while (corto_iter_hasNext(&it)) {
                         x_parser_beadRule *r = corto_iter_next(&it);
-                        if (r->rule->pattern && (r->rule->pattern[n] != majority)) {
+                        if (r->rule->pattern && (strncmp(&r->rule->pattern[n], majority, len))) {
                             corto_ll_remove(b_cur->rules, r);
                             corto_ll_append(b_cur->prev->rules, r);
-                            corto_debug("moved from '%s'=>'%s' (%s)\n", b_cur->expr, b_cur->prev->expr, r->rule->pattern);
+                            corto_trace("moved '%s' from '%s' to '%s'", corto_idof(r->rule), b_cur->expr, b_cur->prev->expr);
                             changed = TRUE;
                         }
                     }
@@ -329,7 +363,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
             }
 
             prev = max;
-            n++;
+            n += len;
         } while (max >= X_BEAD_GROUP_MIN);
 
         if (!changed) {
