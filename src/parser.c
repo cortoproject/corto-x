@@ -205,7 +205,7 @@ corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
 }
 
 int x_parser_scanForMajority(char *expr, char *majorityBuffer) {
-    char *ptr, ch;
+    char *ptr = expr, ch;
     bool inlineRegex = false;
 
     if (expr[0] == '{') {
