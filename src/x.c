@@ -116,8 +116,11 @@ int16_t x_parseString(
         param.value = visitor;
     }
 
-    corto_trace("x/parser: parsing [%s]", line);
-    corto_timeGet(&start);
+    /* Benchmarking only enabled when Corto running with TRACE verbosity */
+    if (corto_verbosityGet() <= CORTO_TRACE) {
+        corto_trace("x/parser: parsing [%s]", line);
+        corto_timeGet(&start);
+    }
 
     if (corto_router_match(instance, line, param, result, &route)) {
         corto_lasterr(); /* Suppress uncatched error warning */
@@ -132,21 +135,20 @@ int16_t x_parseString(
         matched = 1;
     }
 
-    corto_timeGet(&stop);
-    for (i = 0; i < 80; i++) {
-        printf("\b");
+
+    if (corto_verbosityGet() <= CORTO_TRACE) {
+        corto_timeGet(&stop);
+        corto_trace("");
+        corto_trace("Successfully parsed [%s] in [%f]s",
+        line,
+        corto_timeToDouble(corto_timeSub(stop, start)));
     }
 
     corto_dealloc(routesCalled.buffer);
 
-    corto_trace("");
-    if (matched == 0){
-        corto_info("Failed to parse [%s] - no matching routes\n", line)
+    if (matched == 0) {
+        corto_trace("Failed to parse [%s] - no matching routes\n", line)
         return -1;
-    } else {
-        corto_trace("Successfully parsed [%s] in [%f]s",
-        line,
-        corto_timeToDouble(corto_timeSub(stop, start)));
     }
 
     return 0;
