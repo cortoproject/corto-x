@@ -63,6 +63,6 @@ the parser will build a parser tree that looks like this:
      - "": rule1
      - " times [0-9]": rule2
 ```
-This ensures that common parts in regular expressions are never evaluated more than once per input line, which allows for very fast parsing.
+This ensures that common parts in regular expressions are never evaluated more than once per input line, which allows for very fast parsing. Especially projects with large numbers of regular expressions will see a big increase in performance when comparing with the naive approach (test each string against each full expression).
 
 
