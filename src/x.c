@@ -101,15 +101,9 @@ int16_t x_parseString(
     corto_string line,
     corto_object visitor)
 {
-    corto_routerimpl parser = corto_routerimpl(corto_typeof(instance));
-    corto_objectseq *methods = &corto_interface(parser)->methods;
-    corto_int32seq routesCalled;
-    routesCalled.buffer = corto_calloc(methods->length * sizeof(corto_int32));
-    routesCalled.length = methods->length;
     corto_int32 matched = 0;
     corto_time start, stop;
     corto_route route = NULL;
-    corto_int32 i;
     corto_any param = {NULL}, result = {NULL, NULL};
     if (visitor) {
         param.type = corto_typeof(visitor);
@@ -125,26 +119,18 @@ int16_t x_parseString(
     if (corto_router_match(instance, line, param, result, &route)) {
         corto_lasterr(); /* Suppress uncatched error warning */
     } else if (route) {
-        /* Keep track of how many times a route is called */
-        for (i = 0; i < methods->length; i++) {
-            if (methods->buffer[i] == route) {
-                routesCalled.buffer[i] ++;
-            }
-        }
-
+        /* Route successfully matched. */
         matched = 1;
     }
-
 
     if (corto_verbosityGet() <= CORTO_TRACE) {
         corto_timeGet(&stop);
         corto_trace("");
-        corto_trace("Successfully parsed [%s] in [%f]s",
+        corto_trace("Successfully parsed [%s] in [%f]s.\nMatched Route [%s]",
         line,
-        corto_timeToDouble(corto_timeSub(stop, start)));
+        corto_timeToDouble(corto_timeSub(stop, start)),
+        corto_idof(route));
     }
-
-    corto_dealloc(routesCalled.buffer);
 
     if (matched == 0) {
         corto_trace("Failed to parse [%s] - no matching routes\n", line)
