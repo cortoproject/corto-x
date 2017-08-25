@@ -19,9 +19,9 @@ class pattern: struct, hidden, attr = attr_default|attr_named::
   scope: object, local|readonly
   regex: string, local|readonly
   params: list{x/pattern/parameter}, local|readonly
-  
+
   // info for dependency resolver so patterns are inserted in right order
-  deps: list{object}, private 
+  deps: list{object}, private
 
   int16 construct()
   int16 init()
@@ -36,8 +36,8 @@ procedure rule: base=core/route, options={parentState=DECLARED}::
 
 // The parser invokes the rule that matches the input
 core/router parser {
-  routerDataName="data", 
-  routerDataType=object, 
+  routerDataName="data",
+  routerDataType=object,
   elementSeparator=null
 } ::
   int32 matchRoute(core/route route, stringseq pattern, any param, out:any routerData) overridable
@@ -58,5 +58,5 @@ class visitor: class, private, options={defaultProcedureType=x/callback}::
 
 // Utility function to feed a file to a parser
 int16 parseFile(object instance, string file, object visitor)
-
-
+// Utility function fo feed a single line ("string") to a parser
+int16 parseString(object instance, string line, object visitor)
