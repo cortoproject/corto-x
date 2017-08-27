@@ -49,7 +49,7 @@ core/router parser {
 // Visitor class for x/parser
 class visitor
 
-procedure callback: base=lang/method, options={parentState=DECLARED|DEFINED, parentType=x/visitor}::
+procedure callback: base=lang/method, options={parentState=DECLARED|VALID, parentType=x/visitor}::
   int16 construct() method
 
 class visitor: class, private, options={defaultProcedureType=x/callback}::
