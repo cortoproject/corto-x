@@ -27,7 +27,7 @@ class pattern: struct, hidden, attr = attr_default|attr_named::
   int16 init()
 
 // Rule expressions are matched with a single line from the input
-procedure rule: base=core/route, options={parentState=DECLARED}::
+procedure rule: base=vstore/route, options={parentState=DECLARED}::
   member pattern: x/pattern, private
   member regex: string
   member compiledRegex: word
@@ -35,13 +35,13 @@ procedure rule: base=core/route, options={parentState=DECLARED}::
   void destruct() method
 
 // The parser invokes the rule that matches the input
-core/router parser {
+vstore/router parser {
   routerDataName="data",
   routerDataType=object,
   elementSeparator=null
 } ::
-  int32 matchRoute(core/route route, stringseq pattern, any param, out:any routerData) overridable
-  core/route findRoute(object instance, stringseq pattern, any param, out:any routerData) overridable
+  int32 matchRoute(vstore/route route, stringseq pattern, any param, out:any routerData) overridable
+  vstore/route findRoute(object instance, stringseq pattern, any param, out:any routerData) overridable
   int16 construct()
 
   member ruleChain: word
