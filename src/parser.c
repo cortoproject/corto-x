@@ -229,6 +229,7 @@ int x_parser_scanForMajority(char *expr, char *majorityBuffer) {
     } else {
         majorityBuffer[0] = expr[0];
         majorityBuffer[1] = '\0';
+        ptr = expr + 1;
     }
 
     return ptr - expr;
@@ -282,7 +283,6 @@ x_parser_bead* x_parser_optimize(x_parser this) {
             while (corto_iter_hasNext(&it)) {
                 x_parser_beadRule *r = corto_iter_next(&it);
                 if (r->rule->pattern) {
-
                     if (!(majorityLen = x_parser_scanForMajority(&r->rule->pattern[n], buff))) {
                         break;
                     }
