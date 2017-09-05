@@ -84,7 +84,7 @@ corto_string x_parser_regexFromExpr(x_parser this, corto_string expr) {
         goto error;
     }
     if (p->regex) {
-        corto_asprintf(&result, "^%s", p->regex);
+        result = corto_asprintf("^%s", p->regex);
     }
     corto_delete(p);
     return result;

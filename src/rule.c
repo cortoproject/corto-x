@@ -15,7 +15,7 @@ int16_t x_rule_construct(
             goto error;
         }
 
-        corto_asprintf(&this->regex, "^%s$", this->pattern->regex);
+        this->regex = corto_asprintf("^%s$", this->pattern->regex);
 
         corto_trace("x: '%s' regex = '%s'", corto_idof(this), this->regex);
 
