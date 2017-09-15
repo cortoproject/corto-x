@@ -1,0 +1,9 @@
+{
+    "id": "corto/x",
+    "type": "package",
+    "value": {
+        "author": "Sander Mertens",
+        "version": "1.0.0",
+        "description": "A user-friendly & fast regular expression based pattern matchern"        
+    }
+}
