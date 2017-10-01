@@ -72,7 +72,7 @@ corto_bool x_parser_beadMajorityInBeads(x_parser_bead *bead, char ch) {
     return FALSE;
 }
 
-corto_string x_parser_regexFromExpr(x_parser this, corto_string expr) {
+corto_string x_parser_regexFromExpr(x_parser this, corto_string expr, bool rule) {
     x_pattern p = corto_declare(x_pattern_o);
     corto_string result = NULL;
     if (!p) {
@@ -84,7 +84,11 @@ corto_string x_parser_regexFromExpr(x_parser this, corto_string expr) {
         goto error;
     }
     if (p->regex) {
-        result = corto_asprintf("^%s", p->regex);
+        if (rule) {
+            result = corto_asprintf("^%s$", p->regex);
+        } else {
+            result = corto_asprintf("^%s", p->regex);
+        }
     }
     corto_delete(p);
     return result;
@@ -94,11 +98,12 @@ error:
 
 corto_int16 x_parser_compileBeads(x_parser this, x_parser_bead *bead) {
     if (strlen(bead->expr)) {
-        corto_string regex = x_parser_regexFromExpr(this, bead->expr);
+        corto_string regex = x_parser_regexFromExpr(this, bead->expr, false);
         if (!regex) {
             goto error;
         }
 
+        corto_debug("x: compiling regex '%s' for bead '%s'", regex, bead->expr);
         if (regcomp(&bead->regex, regex, REG_EXTENDED)) {
             goto error;
         }
@@ -120,10 +125,12 @@ corto_int16 x_parser_compileBeads(x_parser this, x_parser_bead *bead) {
         corto_iter it = corto_ll_iter(bead->rules);
         while (corto_iter_hasNext(&it)) {
             x_parser_beadRule *r = corto_iter_next(&it);
-            corto_string regex = x_parser_regexFromExpr(this, &r->rule->pattern[bead->offset]);
+            corto_string regex = x_parser_regexFromExpr(this, &r->rule->pattern[bead->offset], true);
             if (!regex) {
                 r->empty = TRUE;
+                corto_debug("x: mark rule '%s' as empty", corto_idof(r->rule));
             } else {
+                corto_debug("x: compiling regex '%s' for rule '%s'", regex, corto_idof(r->rule));
                 if (regcomp(&r->regex, regex, REG_EXTENDED)) {
                     goto error;
                 }
@@ -165,10 +172,13 @@ corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
     char *ptr = str;
     corto_iter it;
 
+
     /* If bead has expression, test if string matches */
     if (b->expr[0]) {
+        corto_debug("evaluate bead '%s' for '%s'", b->expr, str);
         regmatch_t match;
         if (regexec(&b->regex, str, 1, &match, 0)) {
+            corto_debug("bead '%s' does not match '%s'", b->expr, str);
             return NULL;
         }
         ptr = &str[match.rm_eo];
@@ -190,11 +200,15 @@ corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
         while (corto_iter_hasNext(&it)) {
             x_parser_beadRule *rule = corto_iter_next(&it);
             if (rule->empty) {
+                corto_debug("evaluate empty rule '%s' for '%s'", corto_idof(rule->rule), ptr);
                 if (!ptr[0]) {
+                    corto_debug("matched empty rule '%s' with '%s'", corto_idof(rule->rule), ptr);
                     return rule->rule;
                 }
             } else {
+                corto_debug("evaluate rule '%s' (regex='%s') for '%s'", corto_idof(rule->rule), x_rule(rule->rule)->regex, ptr);
                 if (!regexec(&rule->regex, ptr, 0, NULL, 0)) {
+                    corto_debug("matched rule '%s' with '%s'", corto_idof(rule->rule), ptr);
                     return rule->rule;
                 }
             }
@@ -244,7 +258,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
 
     b_root = x_parser_beadNew();
 
-    /* Initialize root bead */
+    /* Initially add all rules as beads to the root */
     for (i = 0; i < methods->length; i++) {
         if (corto_instanceof(x_rule_o, methods->buffer[i])) {
             corto_route r = methods->buffer[i];
@@ -415,6 +429,8 @@ corto_route x_parser_findRoute_v(
     // Uncomment this line to switch to legacy lookup of routes (slow)
     // return corto_routerimpl_findRoute_v(this, pattern, param, routerData);
 
+    corto_component_push("x");
+
     // Find route in optimized parser administration
     x_parser_bead *b = (x_parser_bead*)this->ruleChain;
 
@@ -457,8 +473,10 @@ corto_route x_parser_findRoute_v(
         }
     }
 
+    corto_component_pop();
     return result;
 error:
+    corto_component_pop();
     return NULL;
 }
 
