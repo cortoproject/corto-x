@@ -1,4 +1,4 @@
-#package /corto/x
+in package corto/x
 
 // Tokens describe a simple regex
 class token::

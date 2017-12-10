@@ -3,7 +3,9 @@
     "type": "package",
     "value": {
         "author": "Sander Mertens",
-        "version": "1.0.0",
-        "description": "A user-friendly & fast regular expression based pattern matchern"        
+        "organization": "cortoproject",
+        "repository": "https://github.com/cortoproject/x",
+        "license": "MIT",        
+        "description": "Regular expression based DSL for parsing line-based inputs"
     }
 }

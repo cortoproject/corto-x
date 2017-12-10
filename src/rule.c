@@ -11,7 +11,7 @@ int16_t x_rule_construct(
         corto_ptr_setstr(&this->pattern->expr, corto_route(this)->pattern);
         corto_ptr_setref(&this->pattern->scope, corto_parentof(corto_parentof(this)));
         if (corto_define(this->pattern)) {
-            corto_seterr("%s: %s", corto_fullpath(NULL, this), corto_lasterr());
+            corto_throw("%s: %s", corto_fullpath(NULL, this), corto_lasterr());
             goto error;
         }
 
@@ -23,7 +23,7 @@ int16_t x_rule_construct(
         regex_t *regex = corto_alloc(sizeof(regex_t));
         int ret = regcomp(regex, this->pattern->regex, REG_EXTENDED);
         if (ret) {
-            corto_seterr("x: failed to compile regex '%s'\n", this->pattern->regex);
+            corto_throw("x: failed to compile regex '%s'\n", this->pattern->regex);
             goto error;
         }
 

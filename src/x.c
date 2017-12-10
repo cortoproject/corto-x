@@ -8,7 +8,7 @@ int16_t x_parseFile(
 {
     FILE *f = fopen(file, "r");
     if (!f) {
-        corto_seterr("x: could not open input file '%s': %s", file, corto_lasterr());
+        corto_throw("x: could not open input file '%s': %s", file, corto_lasterr());
         goto error;
     }
 
@@ -34,8 +34,8 @@ int16_t x_parseFile(
     }
 
     printf("x/parser: parsing '%s'\n", file);
-    corto_timeGet(&start);
-    while ((line = corto_fileReadLine((corto_file)f, buffer, sizeof(buffer)))) {
+    corto_time_get(&start);
+    while ((line = corto_file_readln(f, buffer, sizeof(buffer)))) {
         if (corto_router_match(instance, line, param, result, &route)) {
             corto_lasterr(); /* Suppress uncatched error warning */
         } else if (route) {
@@ -65,7 +65,7 @@ int16_t x_parseFile(
         lineCount ++;
     }
 
-    corto_timeGet(&stop);
+    corto_time_get(&stop);
     for (i = 0; i < 80; i++) {
         printf("\b");
     }
@@ -73,7 +73,7 @@ int16_t x_parseFile(
     printf("x/parser: 100%% (total = %d, matched = %d)  \n",
         totalLines, totalMatched);
     printf("x/parser: done (%.1f seconds)\n",
-        corto_timeToDouble(corto_timeSub(stop, start)));
+        corto_time_toDouble(corto_time_sub(stop, start)));
     corto_trace("");
     corto_trace("x: Summary:");
     for (i = 0; i < routesCalled.length; i++) {
@@ -86,11 +86,9 @@ int16_t x_parseFile(
     corto_trace("x: parsed %d lines, matched %d in %fs",
         totalLines,
         totalMatched,
-        corto_timeToDouble(corto_timeSub(stop, start)));
+        corto_time_toDouble(corto_time_sub(stop, start)));
     corto_dealloc(routesCalled.buffer);
-
     fclose(f); /* Close file handler */
-
     return 0;
 error:
     return -1;
@@ -111,9 +109,9 @@ int16_t x_parseString(
     }
 
     /* Benchmarking only enabled when Corto running with TRACE verbosity */
-    if (corto_verbosityGet() <= CORTO_TRACE) {
+    if (corto_log_verbosityGet() <= CORTO_TRACE) {
         corto_trace("x/parser: parsing [%s]", line);
-        corto_timeGet(&start);
+        corto_time_get(&start);
     }
 
     if (corto_router_match(instance, line, param, result, &route)) {
@@ -123,12 +121,12 @@ int16_t x_parseString(
         matched = 1;
     }
 
-    if (corto_verbosityGet() <= CORTO_TRACE) {
-        corto_timeGet(&stop);
+    if (corto_log_verbosityGet() <= CORTO_TRACE) {
+        corto_time_get(&stop);
         corto_trace("");
         corto_trace("Successfully parsed [%s] in [%f]s.\nMatched Route [%s]",
         line,
-        corto_timeToDouble(corto_timeSub(stop, start)),
+        corto_time_toDouble(corto_time_sub(stop, start)),
         corto_idof(route));
     }
 
@@ -140,7 +138,7 @@ int16_t x_parseString(
     return 0;
 }
 
-int xMain(int argc, char *argv[]) {
+int cortomain(int argc, char *argv[]) {
 
     /* Insert implementation */
 

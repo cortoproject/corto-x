@@ -26,7 +26,7 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
     if (ch == ':') {
         if (implicitName) {
             /* ':something:' */
-            corto_seterr("invalid element expression");
+            corto_throw("invalid element expression");
             goto error;
         }
 
@@ -39,18 +39,18 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
             regexLiteral = ptr;
             for (; (ch = *ptr) && (ch != ')'); ptr ++) {
                 if (ch == '(') {
-                    corto_seterr("unexpected '(' in regex literal");
+                    corto_throw("unexpected '(' in regex literal");
                     goto error;
                 }
                 regexLiteralCount++;
             }
             if (ch != ')') {
-                corto_seterr("expected ')' after '('");
+                corto_throw("expected ')' after '('");
                 goto error;
             }
             ptr ++;
             if (ptr[0] != '}') {
-                corto_seterr("expected ')}' after '{('");
+                corto_throw("expected ')}' after '{('");
                 goto error;
             }
         }
@@ -73,7 +73,7 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
         tokenName = id1;
 
     } else if (!ch) {
-        corto_seterr("invalid element expression");
+        corto_throw("invalid element expression");
         goto error;
     }
 
@@ -82,7 +82,7 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
         /* parsed identifier is a token/pattern */
         token = corto_lookup(scope, tokenName);
         if (!token) {
-            corto_seterr("unresolved token/pattern '%s'", tokenName);
+            corto_throw("unresolved token/pattern '%s'", tokenName);
             corto_backtrace(stderr);
             goto error;
         }
@@ -94,7 +94,7 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
             corto_buffer_append(regex, "(%s)", x_token(token)->regex);
             elementType = x_token(token)->type;
         } else {
-            corto_seterr(
+            corto_throw(
                 "identifier '%s' does not resolve to pattern or token (type is '%s')",
                 tokenName, corto_fullpath(NULL, corto_typeof(token)));
             goto error;
@@ -174,7 +174,7 @@ int16_t x_pattern_construct(
         case '{':
             ptr = x_pattern_parseElement(this, ptr + 1, &regex, this->scope);
             if (!ptr) {
-                corto_seterr("error parsing '%s': %s", this->expr, corto_lasterr());
+                corto_throw("error parsing '%s': %s", this->expr, corto_lasterr());
                 goto error;
             }
             break;
@@ -195,7 +195,7 @@ int16_t x_pattern_construct(
                 corto_buffer_appendstr(&regex, "\\\\");
                 ptr ++;
             } else {
-                corto_seterr("invalid escape sequence '\\%c'", ptr[1]);
+                corto_throw("invalid escape sequence '\\%c'", ptr[1]);
                 goto error;
             }
             break;

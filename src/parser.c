@@ -153,13 +153,13 @@ corto_bool x_parser_cleanEmptyBeads(x_parser_bead *bead) {
                 corto_ll_remove(bead->beads, b);
             }
         }
-        if (!corto_ll_size(bead->beads)) {
+        if (!corto_ll_count(bead->beads)) {
             corto_ll_free(bead->beads);
             bead->beads = NULL;
         }
     }
     if (bead->rules) {
-        if (!corto_ll_size(bead->rules)) {
+        if (!corto_ll_count(bead->rules)) {
             corto_ll_free(bead->rules);
             bead->rules = NULL;
         }
@@ -329,7 +329,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
             majorityLen = strlen(majority);
 
             corto_trace("x: majority = '%s', total = %d, max = %d, prev = %d, n = %d",
-                majority, corto_ll_size(b_cur->rules), max, prev, n);
+                majority, corto_ll_count(b_cur->rules), max, prev, n);
 
             if ((prev != max) && (!prev || ((prev - max) >= X_BEAD_GROUP_MIN))) {
                 corto_trace("x: new bead '%s' -> '%s'", b_cur->expr, majority);
@@ -516,7 +516,7 @@ int32_t x_parser_matchRoute_v(
                 o = corto_value_object(result, NULL);
                 corto_int16 ret = corto_value_memberExpr(&o, p->name, &m);
                 if (ret) {
-                    corto_seterr("invalid parameter '%s': %s", p->name, corto_lasterr());
+                    corto_throw("invalid parameter '%s': %s", p->name, corto_lasterr());
                     corto_delete(result);
                     goto error;
                 }
@@ -536,7 +536,7 @@ int32_t x_parser_matchRoute_v(
             routerData->value = result;
 
         } else if (ret != REG_NOMATCH) {
-            corto_seterr("x: error matching regex");
+            corto_throw("x: error matching regex");
         }
     }
 

@@ -13,7 +13,7 @@ int16_t x_callback_construct(
         corto_idof(this));
 
     if (!rule) {
-        corto_seterr("cannot find rule '%s' in parser '%s'",
+        corto_throw("cannot find rule '%s' in parser '%s'",
             corto_idof(this),
             corto_fullpath(NULL, visitor->parser));
         goto error;
