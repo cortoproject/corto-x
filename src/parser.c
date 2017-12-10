@@ -292,7 +292,7 @@ x_parser_bead* x_parser_optimize(x_parser this) {
         do {
             max = 0;
             majority[0] = '\0';
-            
+
             it = corto_ll_iter(b_cur->rules);
             while (corto_iter_hasNext(&it)) {
                 x_parser_beadRule *r = corto_iter_next(&it);
@@ -429,7 +429,7 @@ corto_route x_parser_findRoute_v(
     // Uncomment this line to switch to legacy lookup of routes (slow)
     // return corto_routerimpl_findRoute_v(this, pattern, param, routerData);
 
-    corto_component_push("x");
+    corto_log_push("x");
 
     // Find route in optimized parser administration
     x_parser_bead *b = (x_parser_bead*)this->ruleChain;
@@ -473,10 +473,10 @@ corto_route x_parser_findRoute_v(
         }
     }
 
-    corto_component_pop();
+    corto_log_pop();
     return result;
 error:
-    corto_component_pop();
+    corto_log_pop();
     return NULL;
 }
 
@@ -544,4 +544,3 @@ int32_t x_parser_matchRoute_v(
 error:
     return -1;
 }
-
