@@ -9,7 +9,7 @@ int16_t x_callback_construct(
 
     /* Find matching rule (by id) in parser */
     corto_method rule = corto_interface_resolveMethod(
-        visitor->parser, 
+        visitor->parser,
         corto_idof(this));
 
     if (!rule) {
@@ -28,8 +28,7 @@ int16_t x_callback_construct(
     corto_ptr_setstr(&f->parameters.buffer[1].name, "node");
     corto_ptr_setref(&f->parameters.buffer[1].type, corto_function(rule)->parameters.buffer[0].type);
 
-    return corto_method_construct(this);
+    return corto_super_construct(this);
 error:
     return -1;
 }
-
