@@ -108,7 +108,7 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
 
     if (elementName) {
         /* Create member of element type in pattern */
-        corto_member m = corto_declareChild(this, elementName, corto_member_o);
+        corto_member m = corto_declare(this, elementName, corto_member_o);
         corto_ptr_setref(&m->type, elementType);
         if (corto_define(m)) {
             goto error;

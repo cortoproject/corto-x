@@ -7,7 +7,7 @@ int16_t x_rule_construct(
     x_rule this)
 {
     if (corto_route(this)->pattern) {
-        this->pattern = corto_declareChild(corto_parentof(corto_parentof(this)), corto_idof(this), x_pattern_o);
+        this->pattern = corto_declare(corto_parentof(corto_parentof(this)), corto_idof(this), x_pattern_o);
         corto_ptr_setstr(&this->pattern->expr, corto_route(this)->pattern);
         corto_ptr_setref(&this->pattern->scope, corto_parentof(corto_parentof(this)));
         if (corto_define(this->pattern)) {

@@ -73,7 +73,7 @@ corto_bool x_parser_beadMajorityInBeads(x_parser_bead *bead, char ch) {
 }
 
 corto_string x_parser_regexFromExpr(x_parser this, corto_string expr, bool rule) {
-    x_pattern p = corto_declare(x_pattern_o);
+    x_pattern p = corto_declare(NULL, NULL, x_pattern_o);
     corto_string result = NULL;
     if (!p) {
         goto error;
@@ -497,7 +497,7 @@ int32_t x_parser_matchRoute_v(
         ret = regexec(regex, pattern.buffer[0], (size_t)regex->re_nsub + 1, match, 0);
 
         if (!ret) {
-            corto_object result = corto_declare(rule->pattern);
+            corto_object result = corto_declare(NULL, NULL, rule->pattern);
 
             int i;
             for (i = 1; i <= regex->re_nsub; i++) {
