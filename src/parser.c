@@ -455,7 +455,7 @@ corto_route x_parser_findRoute_v(
                 args[0] = &visitor;
                 args[1] = instance,
                 args[2] = &routerData->value;
-                corto_callb(corto_function(callback), NULL, args);
+                corto_invokeb(corto_function(callback), NULL, args);
             }
 
             /* If visitor implements matched, call it for every rule */
@@ -466,7 +466,7 @@ corto_route x_parser_findRoute_v(
                 args[0] = &visitor;
                 args[1] = instance,
                 args[2] = &routerData->value;
-                corto_callb(corto_function(callback), NULL, args);
+                corto_invokeb(corto_function(callback), NULL, args);
             }
 
             result = NULL;
