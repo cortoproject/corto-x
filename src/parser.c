@@ -78,8 +78,8 @@ corto_string x_parser_regexFromExpr(x_parser this, corto_string expr, bool rule)
     if (!p) {
         goto error;
     }
-    corto_ptr_setstr(&p->expr, expr);
-    corto_ptr_setref(&p->scope, corto_parentof(this));
+    corto_set_str(&p->expr, expr);
+    corto_set_ref(&p->scope, corto_parentof(this));
     if (corto_define(p)) {
         goto error;
     }

@@ -22,11 +22,11 @@ int16_t x_callback_construct(
     f->parameters.buffer = corto_calloc(sizeof(corto_parameter) * 2);
     f->parameters.length = 2;
 
-    corto_ptr_setstr(&f->parameters.buffer[0].name, "parser");
-    corto_ptr_setref(&f->parameters.buffer[0].type, visitor->parser);
+    corto_set_str(&f->parameters.buffer[0].name, "parser");
+    corto_set_ref(&f->parameters.buffer[0].type, visitor->parser);
 
-    corto_ptr_setstr(&f->parameters.buffer[1].name, "node");
-    corto_ptr_setref(&f->parameters.buffer[1].type, corto_function(rule)->parameters.buffer[0].type);
+    corto_set_str(&f->parameters.buffer[1].name, "node");
+    corto_set_ref(&f->parameters.buffer[1].type, corto_function(rule)->parameters.buffer[0].type);
 
     return corto_super_construct(this);
 error:

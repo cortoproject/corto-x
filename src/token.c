@@ -13,7 +13,7 @@ int16_t x_token_init(
     x_token this)
 {
 
-    corto_ptr_setref(&this->type, corto_string_o);
+    corto_set_ref(&this->type, corto_string_o);
     return 0;
 }
 
