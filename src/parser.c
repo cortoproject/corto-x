@@ -64,7 +64,7 @@ corto_bool x_parser_beadMajorityInBeads(x_parser_bead *bead, char ch) {
         corto_iter it = corto_ll_iter(bead->beads);
         while (corto_iter_hasNext(&it)) {
             x_parser_bead *b = corto_iter_next(&it);
-            if (b->expr && (b->expr[0] == ch)) {
+            if (b->expr[0] == ch) {
                 return TRUE;
             }
         }
