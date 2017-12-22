@@ -7,9 +7,9 @@ int16_t x_rule_construct(
     x_rule this)
 {
     if (corto_route(this)->pattern) {
-        this->pattern = corto_declareChild(corto_parentof(corto_parentof(this)), corto_idof(this), x_pattern_o);
-        corto_ptr_setstr(&this->pattern->expr, corto_route(this)->pattern);
-        corto_ptr_setref(&this->pattern->scope, corto_parentof(corto_parentof(this)));
+        this->pattern = corto_declare(corto_parentof(corto_parentof(this)), corto_idof(this), x_pattern_o);
+        corto_set_str(&this->pattern->expr, corto_route(this)->pattern);
+        corto_set_ref(&this->pattern->scope, corto_parentof(corto_parentof(this)));
         if (corto_define(this->pattern)) {
             corto_throw("%s: %s", corto_fullpath(NULL, this), corto_lasterr());
             goto error;
@@ -38,7 +38,7 @@ int16_t x_rule_construct(
     /* Overwrite type of 'data' to match the type of the pattern */
     if (this->pattern) {
         corto_uint32 length = corto_function(this)->parameters.length;
-        corto_ptr_setref(&corto_function(this)->parameters.buffer[length - 1].type, this->pattern);
+        corto_set_ref(&corto_function(this)->parameters.buffer[length - 1].type, this->pattern);
     }
 
     return 0;

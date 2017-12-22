@@ -3,7 +3,7 @@
 #include <corto/x/x.h>
 int16_t x_parseFile(
     corto_object instance,
-    corto_string file,
+    const char *file,
     corto_object visitor)
 {
     FILE *f = fopen(file, "r");
@@ -96,7 +96,7 @@ error:
 
 int16_t x_parseString(
     corto_object instance,
-    corto_string line,
+    const char *line,
     corto_object visitor)
 {
     corto_int32 matched = 0;
@@ -144,3 +144,4 @@ int cortomain(int argc, char *argv[]) {
 
     return 0;
 }
+

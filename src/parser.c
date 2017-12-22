@@ -73,13 +73,13 @@ corto_bool x_parser_beadMajorityInBeads(x_parser_bead *bead, char ch) {
 }
 
 corto_string x_parser_regexFromExpr(x_parser this, corto_string expr, bool rule) {
-    x_pattern p = corto_declare(x_pattern_o);
+    x_pattern p = corto_declare(NULL, NULL, x_pattern_o);
     corto_string result = NULL;
     if (!p) {
         goto error;
     }
-    corto_ptr_setstr(&p->expr, expr);
-    corto_ptr_setref(&p->scope, corto_parentof(this));
+    corto_set_str(&p->expr, expr);
+    corto_set_ref(&p->scope, corto_parentof(this));
     if (corto_define(p)) {
         goto error;
     }
@@ -455,7 +455,7 @@ corto_route x_parser_findRoute_v(
                 args[0] = &visitor;
                 args[1] = instance,
                 args[2] = &routerData->value;
-                corto_callb(corto_function(callback), NULL, args);
+                corto_invokeb(corto_function(callback), NULL, args);
             }
 
             /* If visitor implements matched, call it for every rule */
@@ -466,7 +466,7 @@ corto_route x_parser_findRoute_v(
                 args[0] = &visitor;
                 args[1] = instance,
                 args[2] = &routerData->value;
-                corto_callb(corto_function(callback), NULL, args);
+                corto_invokeb(corto_function(callback), NULL, args);
             }
 
             result = NULL;
@@ -497,7 +497,7 @@ int32_t x_parser_matchRoute_v(
         ret = regexec(regex, pattern.buffer[0], (size_t)regex->re_nsub + 1, match, 0);
 
         if (!ret) {
-            corto_object result = corto_declare(rule->pattern);
+            corto_object result = corto_declare(NULL, NULL, rule->pattern);
 
             int i;
             for (i = 1; i <= regex->re_nsub; i++) {
