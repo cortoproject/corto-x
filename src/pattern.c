@@ -83,7 +83,6 @@ char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, cor
         token = corto_lookup(scope, tokenName);
         if (!token) {
             corto_throw("unresolved token/pattern '%s'", tokenName);
-            corto_backtrace(stderr);
             goto error;
         }
 
@@ -174,7 +173,7 @@ int16_t x_pattern_construct(
         case '{':
             ptr = x_pattern_parseElement(this, ptr + 1, &regex, this->scope);
             if (!ptr) {
-                corto_throw("error parsing '%s': %s", this->expr, corto_lasterr());
+                corto_throw("error parsing '%s'", this->expr);
                 goto error;
             }
             break;
@@ -241,4 +240,3 @@ int16_t x_pattern_init(
     corto_set_ref(&this->type, this);
     return corto_struct_init(this);
 }
-

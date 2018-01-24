@@ -516,7 +516,7 @@ int32_t x_parser_matchRoute_v(
                 o = corto_value_object(result, NULL);
                 corto_int16 ret = corto_value_memberExpr(&o, p->name, &m);
                 if (ret) {
-                    corto_throw("invalid parameter '%s': %s", p->name, corto_lasterr());
+                    corto_throw("invalid parameter '%s'", p->name);
                     corto_delete(result);
                     goto error;
                 }

@@ -8,7 +8,7 @@ int16_t x_parseFile(
 {
     FILE *f = fopen(file, "r");
     if (!f) {
-        corto_throw("x: could not open input file '%s': %s", file, corto_lasterr());
+        corto_throw("x: could not open input file '%s': %s", file);
         goto error;
     }
 
@@ -37,7 +37,7 @@ int16_t x_parseFile(
     corto_time_get(&start);
     while ((line = corto_file_readln(f, buffer, sizeof(buffer)))) {
         if (corto_router_match(instance, line, param, result, &route)) {
-            corto_lasterr(); /* Suppress uncatched error warning */
+
         } else if (route) {
             /* Keep track of how many times a route is called */
             for (i = 0; i < methods->length; i++) {
@@ -115,7 +115,7 @@ int16_t x_parseString(
     }
 
     if (corto_router_match(instance, line, param, result, &route)) {
-        corto_lasterr(); /* Suppress uncatched error warning */
+
     } else if (route) {
         /* Route successfully matched. */
         matched = 1;
@@ -144,4 +144,3 @@ int cortomain(int argc, char *argv[]) {
 
     return 0;
 }
-

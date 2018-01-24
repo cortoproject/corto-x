@@ -1,17 +1,24 @@
 /* This is a managed file. Do not delete this comment. */
 
 #include <corto/x/x.h>
-#include <regex.h> 
+#include <regex.h>
 
 int16_t x_rule_construct(
     x_rule this)
 {
     if (corto_route(this)->pattern) {
-        this->pattern = corto_declare(corto_parentof(corto_parentof(this)), corto_idof(this), x_pattern_o);
+        this->pattern = corto_declare(
+            corto_parentof(corto_parentof(this)),
+            corto_idof(this), x_pattern_o);
+        if (!this->pattern) {
+            corto_throw(NULL);
+            goto error;
+        }
+
         corto_set_str(&this->pattern->expr, corto_route(this)->pattern);
         corto_set_ref(&this->pattern->scope, corto_parentof(corto_parentof(this)));
         if (corto_define(this->pattern)) {
-            corto_throw("%s: %s", corto_fullpath(NULL, this), corto_lasterr());
+            corto_throw("%s", corto_fullpath(NULL, this));
             goto error;
         }
 
@@ -54,4 +61,3 @@ void x_rule_destruct(
     corto_dealloc((regex_t*)this->compiledRegex);
 
 }
-
