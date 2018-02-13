@@ -2,7 +2,13 @@
 
 #include <corto/x/x.h>
 
-char* x_pattern_parseElement(x_pattern this, char *str, corto_buffer *regex, corto_object scope) {
+static
+char* x_pattern_parseElement(
+    x_pattern this,
+    char *str,
+    corto_buffer *regex,
+    corto_object scope)
+{
     char *ptr = str, ch;
     corto_bool implicitName = FALSE;
     corto_id id1, id2;
