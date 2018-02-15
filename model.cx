@@ -18,10 +18,10 @@ class pattern: struct, hidden, attr = attr_default|attr_named::
 
   scope: object, local|readonly
   regex: string, local|readonly
-  params: list{x/pattern/parameter}, local|readonly
+  params: list{x/pattern/parameter}, local|readonly|not_null
 
   // info for dependency resolver so patterns are inserted in right order
-  deps: list{object}, private
+  deps: list{object}, private|not_null
 
   int16 construct()
   int16 init()
