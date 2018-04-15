@@ -10,6 +10,7 @@ int16_t x_rule_construct(
         this->pattern = corto_declare(
             corto_parentof(corto_parentof(this)),
             corto_idof(this), x_pattern_o);
+        
         if (!this->pattern) {
             corto_throw(NULL);
             goto error;

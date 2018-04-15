@@ -446,8 +446,8 @@ corto_route x_parser_findRoute_v(
          * the router won't invoke the rule of the parser class */
         if (param.value && corto_typeof(param.type) == corto_type(x_visitor_o)) {
             corto_object visitor = param.value;
-            corto_method callback = corto_interface_resolveMethod(
-                corto_typeof(visitor), corto_idof(result));
+            x_callback callback = safe_x_visitor_findMethod(
+                corto_typeof(visitor), result);
 
             /* Visitor doesn't necessarily implement callbacks for all rules */
             if (callback) {
@@ -459,7 +459,7 @@ corto_route x_parser_findRoute_v(
             }
 
             /* If visitor implements matched, call it for every rule */
-            callback = corto_interface_resolveMethod(
+            callback = (x_callback)corto_interface_resolveMethod(
                 corto_typeof(visitor), "_matched");
             if (callback) {
                 void *args[3];

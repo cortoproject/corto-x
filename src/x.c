@@ -1,6 +1,7 @@
 /* This is a managed file. Do not delete this comment. */
 
 #include <corto/x/x.h>
+
 int16_t x_parseFile(
     corto_object instance,
     const char *file,
@@ -15,6 +16,7 @@ int16_t x_parseFile(
     fseek(f, 0L, SEEK_END);
     size_t size = ftell(f);
     rewind(f);
+    
     corto_routerimpl parser = corto_routerimpl(corto_typeof(instance));
     corto_objectseq *methods = &corto_interface(parser)->methods;
     corto_int32seq routesCalled;
@@ -44,9 +46,7 @@ int16_t x_parseFile(
                 if (methods->buffer[i] == route) {
                     routesCalled.buffer[i] ++;
                 }
-
             }
-
             totalMatched ++;
         }
 
@@ -76,6 +76,7 @@ int16_t x_parseFile(
         corto_time_toDouble(corto_time_sub(stop, start)));
     corto_trace("");
     corto_trace("x: Summary:");
+
     for (i = 0; i < routesCalled.length; i++) {
         corto_trace("x: %30s: called %d times",
             corto_idof(methods->buffer[i]),

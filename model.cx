@@ -49,11 +49,13 @@ vstore/router parser {
 // Visitor class for x/parser
 class visitor
 
-procedure callback: base=lang/method, options={parentState=DECLARED|VALID, parentType=x/visitor}::
+procedure callback: base=lang/method, options={parentState=DECLARED, parentType=x/visitor}::
+  member rule: x/rule
   int16 construct() method
 
 class visitor: class, private, options={defaultProcedureType=x/callback}::
   parser: x/parser
+  x/callback findMethod(x/rule rule)
   int16 construct()
 
 // Utility function to feed a file to a parser
