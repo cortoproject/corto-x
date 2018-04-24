@@ -442,8 +442,7 @@ corto_route x_parser_findRoute_v(
             goto error;
         }
 
-        /* If parameter is set to a visitor, call visitor and return NULL, so
-         * the router won't invoke the rule of the parser class */
+        /* If parameter is set to a visitor, call visitor */
         if (param.value && corto_typeof(param.type) == corto_type(x_visitor_o)) {
             corto_object visitor = param.value;
             x_callback callback = safe_x_visitor_findMethod(
@@ -469,7 +468,9 @@ corto_route x_parser_findRoute_v(
                 corto_invokeb(corto_function(callback), NULL, args);
             }
 
-            result = NULL;
+            /* Uncomment to return NULL, so the router won't invoke the rule of
+               the parser class */
+            // result = NULL;
         }
     }
 

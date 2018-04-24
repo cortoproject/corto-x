@@ -16,7 +16,7 @@ int16_t x_parseFile(
     fseek(f, 0L, SEEK_END);
     size_t size = ftell(f);
     rewind(f);
-    
+
     corto_routerimpl parser = corto_routerimpl(corto_typeof(instance));
     corto_objectseq *methods = &corto_interface(parser)->methods;
     corto_int32seq routesCalled;
@@ -116,22 +116,23 @@ int16_t x_parseString(
     }
 
     if (corto_router_match(instance, line, param, result, &route)) {
-
-    } else if (route) {
+        /* corto_router_match failed */
+    }
+    else if (route) {
         /* Route successfully matched. */
         matched = 1;
     }
 
-    if (corto_log_verbosityGet() <= CORTO_TRACE) {
-        corto_time_get(&stop);
-        corto_trace("");
-        corto_trace("Successfully parsed [%s] in [%f]s.\nMatched Route [%s]",
-        line,
-        corto_time_toDouble(corto_time_sub(stop, start)),
-        corto_idof(route));
-    }
-
-    if (matched == 0) {
+    if (matched) {
+        if (corto_log_verbosityGet() <= CORTO_TRACE) {
+            corto_time_get(&stop);
+            corto_trace("");
+            corto_trace("Successfully parsed [%s] in [%f]s.\nMatched Route [%s]",
+                line,
+                corto_time_toDouble(corto_time_sub(stop, start)),
+                corto_idof(route));
+        }
+    } else {
         corto_trace("Failed to parse [%s] - no matching routes\n", line)
         return -1;
     }
