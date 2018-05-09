@@ -522,7 +522,7 @@ int32_t x_parser_matchRoute_v(
                     goto error;
                 }
 
-                r = corto_value_empty();
+                r = corto_value_init();
                 v = corto_value_value(&substrPtr, corto_string_o);
                 corto_value_binaryOp(CORTO_ASSIGN, &m, &v, &r);
                 corto_value_free(&r);
