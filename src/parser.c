@@ -168,7 +168,7 @@ corto_bool x_parser_cleanEmptyBeads(x_parser_bead *bead) {
     return bead->rules == NULL && bead->beads == NULL;
 }
 
-corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
+corto_route x_parser_find_routeInBeads(x_parser_bead *b, corto_string str) {
     char *ptr = str;
     corto_iter it;
 
@@ -189,7 +189,7 @@ corto_route x_parser_findRouteInBeads(x_parser_bead *b, corto_string str) {
         it = corto_ll_iter(b->beads);
         while (corto_iter_hasNext(&it)) {
             x_parser_bead *bead = corto_iter_next(&it);
-            corto_route result = x_parser_findRouteInBeads(bead, ptr);
+            corto_route result = x_parser_find_routeInBeads(bead, ptr);
             if (result) return result;
         }
     }
@@ -419,7 +419,7 @@ error:
     return -1;
 }
 
-corto_route x_parser_findRoute_v(
+corto_route x_parser_find_route_v(
     x_parser this,
     corto_object instance,
     corto_stringseq pattern,
@@ -427,18 +427,18 @@ corto_route x_parser_findRoute_v(
     corto_any *routerData)
 {
     // Uncomment this line to switch to legacy lookup of routes (slow)
-    // return corto_routerimpl_findRoute_v(this, pattern, param, routerData);
+    // return corto_routerimpl_find_route_v(this, pattern, param, routerData);
 
     corto_log_push("x");
 
     // Find route in optimized parser administration
     x_parser_bead *b = (x_parser_bead*)this->ruleChain;
 
-    corto_route result = x_parser_findRouteInBeads(b, pattern.buffer[0]);
+    corto_route result = x_parser_find_routeInBeads(b, pattern.buffer[0]);
     if (result) {
-        /* matchRoute extracts data from the string and stores it in routerData */
-        if (x_parser_matchRoute(this, result, pattern, param, routerData)) {
-            printf("matchRoute error\n");
+        /* match_route extracts data from the string and stores it in routerData */
+        if (x_parser_match_route(this, result, pattern, param, routerData)) {
+            printf("match_route error\n");
             goto error;
         }
 
@@ -458,7 +458,7 @@ corto_route x_parser_findRoute_v(
             }
 
             /* If visitor implements matched, call it for every rule */
-            callback = (x_callback)corto_interface_resolveMethod(
+            callback = (x_callback)corto_interface_resolve_method(
                 corto_typeof(visitor), "_matched");
             if (callback) {
                 void *args[3];
@@ -481,7 +481,7 @@ error:
     return NULL;
 }
 
-int32_t x_parser_matchRoute_v(
+int32_t x_parser_match_route_v(
     x_parser this,
     corto_route route,
     corto_stringseq pattern,

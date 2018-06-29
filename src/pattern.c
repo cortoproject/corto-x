@@ -15,7 +15,7 @@ char* x_pattern_parseElement(
     char *idPtr = id1;
     char *elementName = NULL, *tokenName = NULL, *regexLiteral;
     int regexLiteralCount = 0;
-    corto_type elementType = corto_type(corto_string_o);
+    corto_type element_type = corto_type(corto_string_o);
 
     if (ptr[0] == ':') {
         /* Derive name from name of referenced pattern/token */
@@ -94,10 +94,10 @@ char* x_pattern_parseElement(
 
         if (corto_instanceof(x_pattern_o, token)) {
             corto_buffer_appendstr(regex, x_pattern(token)->regex);
-            elementType = x_pattern(token)->type;
+            element_type = x_pattern(token)->type;
         } else if (corto_instanceof(x_token_o, token)) {
             corto_buffer_append(regex, "(%s)", x_token(token)->regex);
-            elementType = x_token(token)->type;
+            element_type = x_token(token)->type;
         } else {
             corto_throw(
                 "identifier '%s' does not resolve to pattern or token (type is '%s')",
@@ -108,25 +108,25 @@ char* x_pattern_parseElement(
         if (elementName) corto_buffer_appendstr(regex, "(");
         corto_buffer_appendstrn(regex, regexLiteral, regexLiteralCount);
         if (elementName) corto_buffer_appendstr(regex, ")");
-        elementType = corto_type(corto_string_o);
+        element_type = corto_type(corto_string_o);
     }
 
     if (elementName) {
         /* Create member of element type in pattern */
         corto_member m = corto_declare(this, elementName, corto_member_o);
-        corto_set_ref(&m->type, elementType);
+        corto_set_ref(&m->type, element_type);
         if (corto_define(m)) {
             goto error;
         }
 
         /* The parameter list determines how matched subexpressions should be
          * copied into an instance of this pattern */
-        if (elementType->kind == CORTO_PRIMITIVE) {
+        if (element_type->kind == CORTO_PRIMITIVE) {
             x_pattern_parameter *p = corto_ptr_new(x_pattern_parameter_o);
             corto_set_str(&p->name, elementName);
-            corto_set_ref(&p->type, elementType);
+            corto_set_ref(&p->type, element_type);
             corto_ll_append(this->params, p);
-        } else if (elementType->kind == CORTO_COMPOSITE) {
+        } else if (element_type->kind == CORTO_COMPOSITE) {
             /* Copy members from nested pattern, prefix with elementName */
             corto_id name;
             corto_iter it = corto_ll_iter(x_pattern(token)->params);
@@ -144,7 +144,7 @@ char* x_pattern_parseElement(
     } else {
         x_pattern_parameter *p = corto_ptr_new(x_pattern_parameter_o);
         corto_set_str(&p->name, NULL);
-        corto_set_ref(&p->type, elementType);
+        corto_set_ref(&p->type, element_type);
         corto_ll_append(this->params, p);
     }
 
