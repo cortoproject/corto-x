@@ -1,0 +1,108 @@
+in corto.x
+
+class visitor
+
+/** Tokens describe a simple regex */
+class token {
+    /** Regular expression used to match the token */
+    regex: string
+
+    /** Type of the token */
+    type: lang.type
+
+    construct() int16
+    init() int16
+}
+
+/** Patterns are composite expressions that can be reduced to a regex */
+class pattern = {struct, hidden, attr: attr_default|attr_named} {
+    /** Type for storing named parameters in a pattern */
+    struct parameter {
+        name: string
+        type: type
+    }
+
+member
+    /** Pattern string */
+    expr: string
+
+    /** Pattern type */
+    type: type
+
+    scope: object, local|readonly
+
+    /** Regular expression (generated from pattern) */
+    regex: string, local|readonly
+
+    /** List of named parameters in pattern */
+    params: list[x.pattern.parameter], local|readonly|not_null
+
+    /** info for dependency resolver so patterns are inserted in right order */
+    deps: list[object], private|not_null
+
+    construct() int16
+    init() int16
+}
+
+/** Rule expressions are matched with a single line from the input */
+procedure rule = {base: corto.vstore.route, parent_state: declared} {
+member
+    pattern: x.pattern, private
+    regex: string
+    compiledRegex: word
+
+method
+    construct() int16
+    destruct() void
+}
+
+/** The parser finds & invokes a rule that matches the input */
+corto.vstore.router parser = {
+    router_data_name: "data",
+    router_data_type: object,
+    element_separator: null
+} {
+    /** Private administration that stores optimized rule tree */
+    member ruleChain: word, private
+
+    /** Constructor */
+    method construct() int16
+
+overridable
+    /** Overridable function that checks if a rule matches an input string */
+    match_route(
+        vstore.route route,
+        stringseq pattern,
+        any param,
+        out any routerData) int32
+
+    /** Overridable function that searches for routes (calls match_route) */
+    find_route(
+        object instance,
+        stringseq pattern,
+        any param,
+        out any routerData) corto.vstore.route
+}
+
+/** Visitor callback */
+procedure callback =  {
+    base: method,
+    parent_state: DECLARED,
+    parent_type: x.visitor}
+{
+    member rule: x/rule
+    method construct() int16
+}
+
+/** Visitor class for x/parser */
+class visitor = {class, private, scope_procedure_type: x.callback} {
+    parser: x.parser
+    construct() int16
+    findMethod(x/rule rule) x.callback
+}
+
+// Utility function to feed a file to a parser
+parseFile(object instance, string file, object visitor) int16
+
+// Utility function fo feed a single line ("string") to a parser
+parseString(object instance, string line, object visitor) int16
