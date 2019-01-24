@@ -1,12 +1,12 @@
 /* This is a managed file. Do not delete this comment. */
 
-#include <corto/x/x.h>
+#include <corto.x>
 
 static
 char* x_pattern_parseElement(
     x_pattern this,
     char *str,
-    corto_buffer *regex,
+    ut_strbuf *regex,
     corto_object scope)
 {
     char *ptr = str, ch;
@@ -32,7 +32,7 @@ char* x_pattern_parseElement(
     if (ch == ':') {
         if (implicitName) {
             /* ':something:' */
-            corto_throw("invalid element expression");
+            ut_throw("invalid element expression");
             goto error;
         }
 
@@ -45,18 +45,18 @@ char* x_pattern_parseElement(
             regexLiteral = ptr;
             for (; (ch = *ptr) && (ch != ')'); ptr ++) {
                 if (ch == '(') {
-                    corto_throw("unexpected '(' in regex literal");
+                    ut_throw("unexpected '(' in regex literal");
                     goto error;
                 }
                 regexLiteralCount++;
             }
             if (ch != ')') {
-                corto_throw("expected ')' after '('");
+                ut_throw("expected ')' after '('");
                 goto error;
             }
             ptr ++;
             if (ptr[0] != '}') {
-                corto_throw("expected ')}' after '{('");
+                ut_throw("expected ')}' after '{('");
                 goto error;
             }
         }
@@ -79,7 +79,7 @@ char* x_pattern_parseElement(
         tokenName = id1;
 
     } else if (!ch) {
-        corto_throw("invalid element expression");
+        ut_throw("invalid element expression");
         goto error;
     }
 
@@ -88,26 +88,26 @@ char* x_pattern_parseElement(
         /* parsed identifier is a token/pattern */
         token = corto_lookup(scope, tokenName);
         if (!token) {
-            corto_throw("unresolved token/pattern '%s'", tokenName);
+            ut_throw("unresolved token/pattern '%s'", tokenName);
             goto error;
         }
 
         if (corto_instanceof(x_pattern_o, token)) {
-            corto_buffer_appendstr(regex, x_pattern(token)->regex);
+            ut_strbuf_appendstr(regex, x_pattern(token)->regex);
             element_type = x_pattern(token)->type;
         } else if (corto_instanceof(x_token_o, token)) {
-            corto_buffer_append(regex, "(%s)", x_token(token)->regex);
+            ut_strbuf_append(regex, "(%s)", x_token(token)->regex);
             element_type = x_token(token)->type;
         } else {
-            corto_throw(
+            ut_throw(
                 "identifier '%s' does not resolve to pattern or token (type is '%s')",
                 tokenName, corto_fullpath(NULL, corto_typeof(token)));
             goto error;
         }
     } else {
-        if (elementName) corto_buffer_appendstr(regex, "(");
-        corto_buffer_appendstrn(regex, regexLiteral, regexLiteralCount);
-        if (elementName) corto_buffer_appendstr(regex, ")");
+        if (elementName) ut_strbuf_appendstr(regex, "(");
+        ut_strbuf_appendstrn(regex, regexLiteral, regexLiteralCount);
+        if (elementName) ut_strbuf_appendstr(regex, ")");
         element_type = corto_type(corto_string_o);
     }
 
@@ -125,31 +125,31 @@ char* x_pattern_parseElement(
             x_pattern_parameter *p = corto_ptr_new(x_pattern_parameter_o);
             corto_set_str(&p->name, elementName);
             corto_set_ref(&p->type, element_type);
-            corto_ll_append(this->params, p);
+            ut_ll_append(this->params, p);
         } else if (element_type->kind == CORTO_COMPOSITE) {
             /* Copy members from nested pattern, prefix with elementName */
             corto_id name;
-            corto_iter it = corto_ll_iter(x_pattern(token)->params);
-            while (corto_iter_hasNext(&it)) {
-                x_pattern_parameter *p = corto_iter_next(&it);
+            ut_iter it = ut_ll_iter(x_pattern(token)->params);
+            while (ut_iter_hasNext(&it)) {
+                x_pattern_parameter *p = ut_iter_next(&it);
                 if (p->name) {
                     sprintf(name, "%s.%s", elementName, p->name);
                 }
                 x_pattern_parameter *newParam = corto_ptr_new(x_pattern_parameter_o);
                 corto_set_str(&newParam->name, p->name ? name : NULL);
                 corto_set_ref(&newParam->type, p->type);
-                corto_ll_append(this->params, newParam);
+                ut_ll_append(this->params, newParam);
             }
         }
     } else {
         x_pattern_parameter *p = corto_ptr_new(x_pattern_parameter_o);
         corto_set_str(&p->name, NULL);
         corto_set_ref(&p->type, element_type);
-        corto_ll_append(this->params, p);
+        ut_ll_append(this->params, p);
     }
 
     if (token) {
-        corto_ll_insert(this->deps, token);
+        ut_ll_insert(this->deps, token);
         corto_release(token);
     }
 
@@ -161,8 +161,8 @@ error:
 int16_t x_pattern_construct(
     x_pattern this)
 {
-    corto_buffer regex = CORTO_BUFFER_INIT;
-    char *expr = corto_strdup(this->expr);
+    ut_strbuf regex = UT_STRBUF_INIT;
+    char *expr = ut_strdup(this->expr);
     if (!this->scope) {
         corto_set_ref(&this->scope, corto_parentof(this));
     }
@@ -171,67 +171,67 @@ int16_t x_pattern_construct(
     for (ptr = expr; (ch = *ptr); ptr ++) {
         switch (ch) {
         case '.':
-            corto_buffer_appendstr(&regex, "\\.");
+            ut_strbuf_appendstr(&regex, "\\.");
             break;
         case '[':
-            corto_buffer_appendstr(&regex, "\\[");
+            ut_strbuf_appendstr(&regex, "\\[");
             break;
         case '{':
             ptr = x_pattern_parseElement(this, ptr + 1, &regex, this->scope);
             if (!ptr) {
-                corto_throw("error parsing '%s'", this->expr);
+                ut_throw("error parsing '%s'", this->expr);
                 goto error;
             }
             break;
         case '(':
-            corto_buffer_appendstr(&regex, "\\(");
+            ut_strbuf_appendstr(&regex, "\\(");
             break;
         case ')':
-            corto_buffer_appendstr(&regex, "\\)");
+            ut_strbuf_appendstr(&regex, "\\)");
             break;
         case '\\':
             if (ptr[1] == '{') {
-                corto_buffer_appendstr(&regex, "\\{");
+                ut_strbuf_appendstr(&regex, "\\{");
                 ptr ++;
             } else if (ptr[1] == '}') {
-                corto_buffer_appendstr(&regex, "\\}");
+                ut_strbuf_appendstr(&regex, "\\}");
                 ptr ++;
             } else if (ptr[1] == '\\') {
-                corto_buffer_appendstr(&regex, "\\\\");
+                ut_strbuf_appendstr(&regex, "\\\\");
                 ptr ++;
             } else {
-                corto_throw("invalid escape sequence '\\%c'", ptr[1]);
+                ut_throw("invalid escape sequence '\\%c'", ptr[1]);
                 goto error;
             }
             break;
         case '*':
-            corto_buffer_appendstr(&regex, "\\*");
+            ut_strbuf_appendstr(&regex, "\\*");
             break;
         case '+':
-            corto_buffer_appendstr(&regex, "\\+");
+            ut_strbuf_appendstr(&regex, "\\+");
             break;
         case '?':
-            corto_buffer_appendstr(&regex, "\\?");
+            ut_strbuf_appendstr(&regex, "\\?");
             break;
         case '|':
-            corto_buffer_appendstr(&regex, "\\|");
+            ut_strbuf_appendstr(&regex, "\\|");
             break;
         case '^':
-            corto_buffer_appendstr(&regex, "\\^");
+            ut_strbuf_appendstr(&regex, "\\^");
             break;
         case '$':
-            corto_buffer_appendstr(&regex, "\\$");
+            ut_strbuf_appendstr(&regex, "\\$");
             break;
         case '/':
-            corto_buffer_appendstr(&regex, "\\/");
+            ut_strbuf_appendstr(&regex, "\\/");
             break;
         default:
-            corto_buffer_append(&regex, "%c", ch);
+            ut_strbuf_append(&regex, "%c", ch);
             break;
         }
     }
 
-    this->regex = corto_buffer_str(&regex);
+    this->regex = ut_strbuf_get(&regex);
 
     free (expr);
 

@@ -6,19 +6,20 @@
 #ifndef CORTO_X_H
 #define CORTO_X_H
 
-#include <corto/corto.h>
-#include <corto/x/_project.h>
-#include <corto/c/c.h>
+#include "bake_config.h"
+
+#define CORTO_X_ETC ut_locate("corto.x", NULL, UT_LOCATE_ETC)
 
 /* $header() */
 /* Enter additional code here. */
 /* $end */
 
-#include <corto/x/_type.h>
-#include <corto/x/_interface.h>
-#include <corto/x/_load.h>
-#include <corto/x/_binding.h>
-#include <corto/x/c/_api.h>
+#include "_type.h"
+#include "_interface.h"
+#include "_load.h"
+#include "_binding.h"
+
+#include <corto.x.c>
 
 /* $body() */
 /* Enter code that requires types here */

@@ -1,6 +1,7 @@
 /* This is a managed file. Do not delete this comment. */
 
-#include <corto/x/x.h>
+#include <corto.x>
+
 int16_t x_callback_construct(
     x_callback this)
 {
@@ -11,7 +12,7 @@ int16_t x_callback_construct(
     corto_method rule = (corto_method)this->rule;
 
     if (!rule) {
-        corto_throw("rule not specified for '%s' in '%s",
+        ut_throw("rule not specified for '%s' in '%s",
             corto_idof(this),
             corto_fullpath(NULL, visitor->parser));
         goto error;

@@ -1,6 +1,6 @@
 /* This is a managed file. Do not delete this comment. */
 
-#include <corto/x/x.h>
+#include <corto.x>
 
 int16_t x_parseFile(
     corto_object instance,
@@ -9,7 +9,7 @@ int16_t x_parseFile(
 {
     FILE *f = fopen(file, "r");
     if (!f) {
-        corto_throw("x: could not open input file '%s': %s", file);
+        ut_throw("x: could not open input file '%s': %s", file);
         goto error;
     }
 
@@ -37,7 +37,7 @@ int16_t x_parseFile(
 
     printf("x/parser: parsing '%s'\n", file);
     corto_time_get(&start);
-    while ((line = corto_file_readln(f, buffer, sizeof(buffer)))) {
+    while ((line = ut_file_readln(f, buffer, sizeof(buffer)))) {
         if (corto_router_match(instance, line, param, result, &route)) {
 
         } else if (route) {
@@ -74,17 +74,17 @@ int16_t x_parseFile(
         totalLines, totalMatched);
     printf("x/parser: done (%.1f seconds)\n",
         corto_time_toDouble(corto_time_sub(stop, start)));
-    corto_trace("");
-    corto_trace("x: Summary:");
+    ut_trace("");
+    ut_trace("x: Summary:");
 
     for (i = 0; i < routesCalled.length; i++) {
-        corto_trace("x: %30s: called %d times",
+        ut_trace("x: %30s: called %d times",
             corto_idof(methods->buffer[i]),
             routesCalled.buffer[i]);
     }
 
-    corto_trace("");
-    corto_trace("x: parsed %d lines, matched %d in %fs",
+    ut_trace("");
+    ut_trace("x: parsed %d lines, matched %d in %fs",
         totalLines,
         totalMatched,
         corto_time_toDouble(corto_time_sub(stop, start)));
@@ -110,8 +110,8 @@ int16_t x_parseString(
     }
 
     /* Benchmarking only enabled when Corto running with TRACE verbosity */
-    if (corto_log_verbosityGet() <= CORTO_TRACE) {
-        corto_trace("x/parser: parsing [%s]", line);
+    if (ut_log_verbosityGet() <= UT_TRACE) {
+        ut_trace("x/parser: parsing [%s]", line);
         corto_time_get(&start);
     }
 
@@ -124,16 +124,16 @@ int16_t x_parseString(
     }
 
     if (matched) {
-        if (corto_log_verbosityGet() <= CORTO_TRACE) {
+        if (ut_log_verbosityGet() <= UT_TRACE) {
             corto_time_get(&stop);
-            corto_trace("");
-            corto_trace("Successfully parsed [%s] in [%f]s.\nMatched Route [%s]",
+            ut_trace("");
+            ut_trace("Successfully parsed [%s] in [%f]s.\nMatched Route [%s]",
                 line,
                 corto_time_toDouble(corto_time_sub(stop, start)),
                 corto_idof(route));
         }
     } else {
-        corto_trace("Failed to parse [%s] - no matching routes\n", line)
+        ut_trace("Failed to parse [%s] - no matching routes\n", line)
         return -1;
     }
 

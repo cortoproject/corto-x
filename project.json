@@ -1,11 +1,12 @@
 {
-    "id": "corto/x",
+    "id": "corto.x",
     "type": "package",
     "value": {
         "author": "Sander Mertens",
         "organization": "cortoproject",
         "repository": "https://github.com/cortoproject/x",
-        "license": "MIT",        
+        "license": "MIT",
         "description": "Regular expression based DSL for parsing line-based inputs"
-    }
+    },
+    "corto": { }
 }
