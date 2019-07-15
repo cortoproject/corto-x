@@ -35,7 +35,7 @@ syntax | description
 `{(expr)}` | An inline regular (sub)expression
 `{name:(expr)}` | A named inline regular (sub)expression
 
-Note that a type always refers to an `x/token` or `x/rule`, never to an `x/rule`.
+Note that a type always refers to an `x/token` or `x/rule`, never to an `x/pattern`.
 
 ### Code generation
 Think of `x/token`'s as primitive types, and `x/pattern` as composite types, because that is actually what they are. The `x/pattern`'s "time" and "header" from the example above translate into the following types:
